@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pools</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.t-light{--bg:#F3F4F1;--surface:#FFFFFF;--surface2:#ECEEEA;--ink:#11151B;--ink2:#3F4752;--ink3:#5F6774;--line:#DCDFDB;--accent:#1D4ED8;--accent-ink:#FFFFFF;--accent-soft:#E7EDFD;--win:#137A47;--win-soft:#E2F2E9;--shadow:0 1px 2px rgba(17,21,27,.06),0 6px 16px rgba(17,21,27,.05)}
+.t-dark{--bg:#0D1015;--surface:#161A21;--surface2:#222832;--ink:#F1F3F6;--ink2:#C2C9D3;--ink3:#8F98A5;--line:#2A303B;--accent:#7C9BFF;--accent-ink:#0D1015;--accent-soft:#1C2648;--win:#4CC98A;--win-soft:#14301F;--shadow:0 1px 2px rgba(0,0,0,.5)}
+.app{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.4}
+.d{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.ib{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--ink);border-radius:12px;padding:0}
+.ps{flex:1;height:44px;border:0;border-radius:10px;background:transparent;color:var(--ink2);font:700 20px 'Barlow Condensed',sans-serif}
+.ps.on{background:var(--ink);color:var(--surface)}
+.adv{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:999px;border:1px solid var(--line);font:600 12px Inter,sans-serif;white-space:nowrap}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;color:var(--ink3);font-size:11px;font-weight:600;text-decoration:none}
+.tab.on{color:var(--accent)}
+td,th{padding:0}
+</style>
+</helmet>
+<div class="app {{cls}}" style="width: 390px; min-height: 1560px; display: flex; flex-direction: column">
+<header style="display: flex; flex-direction: column; gap: 12px; padding: 8px 0 12px; background: var(--surface); border-bottom: 1px solid var(--line)">
+<div style="display: flex; align-items: center; gap: 2px; padding: 0 8px 0 16px">
+<h1 style="margin: 0; flex: 1; font-size: 24px; font-weight: 700">Pools</h1>
+<span style="font-size: 12px; color: var(--ink3); display: flex; align-items: center; gap: 6px; padding-right: 4px"><span class="dot" style="width: 6px; height: 6px; background: var(--win)"></span>Updated 2m ago</span>
+<button class="ib" aria-label="Search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+</div>
+<div style="display: flex; align-items: center; gap: 6px; padding: 0 16px">
+<div role="tablist" aria-label="Morning pools" style="flex: 4; display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--surface2)">
+<button role="tab" aria-selected="true" class="ps on">A</button><button role="tab" class="ps">B</button><button role="tab" class="ps">C</button><button role="tab" class="ps">D</button>
+</div>
+<div role="tablist" aria-label="Power pools" style="flex: 4; display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: var(--surface2)">
+<button role="tab" class="ps">E</button><button role="tab" class="ps">F</button><button role="tab" class="ps">G</button><button role="tab" class="ps">H</button>
+</div>
+</div>
+<div style="display: flex; padding: 0 16px; font-size: 11px; color: var(--ink3); font-weight: 600"><span style="flex: 1">Sat morning</span><span style="flex: 1; padding-left: 8px">Afternoon · E/F top 8 · G/H bottom 8</span></div>
+</header>
+
+<main style="display: flex; flex-direction: column; gap: 18px; padding: 16px 16px 28px; flex: 1">
+<sc-for list="{{pools}}" as="p" hint-placeholder-count="2">
+<section class="card" style="overflow: hidden">
+<div style="display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 700">{{p.name}}</h2>
+<span class="lbl">Final</span>
+<span style="flex: 1"></span>
+<span style="font-size: 12px; color: var(--ink3)">W 2 · D 1 pts</span>
+</div>
+<table style="width: 100%; border-collapse: collapse">
+<thead><tr class="lbl"><th style="padding: 6px 4px 6px 16px; text-align: left; width: 16px">#</th><th style="text-align: left; padding: 6px 4px">Team</th><th style="text-align: right; width: 22px">W</th><th style="text-align: right; width: 22px">L</th><th style="text-align: right; width: 22px">D</th><th style="text-align: right; width: 34px">Pts</th><th style="text-align: right; padding-right: 16px; width: 52px">Next</th></tr></thead>
+<tbody>
+<sc-for list="{{p.rows}}" as="r" hint-placeholder-count="4">
+<tr style="border-top: 1px {{r.ls}} {{r.lc}}; background: {{r.bg}}; box-shadow: {{r.edge}}">
+<td class="d" style="padding: 10px 4px 10px 16px; font-size: 18px; font-weight: 700; color: var(--ink3)">{{r.rank}}</td>
+<td style="padding: 10px 4px; font-size: 15px; font-weight: {{r.fw}}"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="dot" style="background: {{r.c}}"></span>{{r.n}}</span></td>
+<td class="d" style="text-align: right; font-size: 18px">{{r.w}}</td>
+<td class="d" style="text-align: right; font-size: 18px">{{r.l}}</td>
+<td class="d" style="text-align: right; font-size: 18px">{{r.dr}}</td>
+<td class="d" style="text-align: right; font-size: 19px; font-weight: 700">{{r.pts}}</td>
+<td style="text-align: right; padding-right: 16px"><span class="adv" style="color: {{r.ac}}; background: {{r.ab}}">→ {{r.to}}</span></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+<sc-if value="{{p.note}}" hint-placeholder-val="{{ false }}"><div style="padding: 8px 16px; font-size: 12px; color: var(--ink3); border-top: 1px solid var(--line)">{{p.note}}</div></sc-if>
+<div style="border-top: 1px solid var(--line)">
+<button aria-expanded="{{p.open}}" style="width: 100%; min-height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border: 0; background: transparent; color: var(--ink); font: 600 14px Inter, sans-serif; text-align: left"><span style="flex: 1">{{p.gl}}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform: {{p.rot}}" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+<sc-for list="{{p.games}}" as="g" hint-placeholder-count="6">
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-top: 1px solid var(--line); font-size: 14px">
+<span class="d" style="font-size: 16px; font-weight: 600; color: var(--ink3); width: 64px">{{g.t}}</span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 1px">
+<span style="display: flex; align-items: center; gap: 6px; font-weight: {{g.aw}}; color: {{g.ac}}"><span class="dot" style="width: 7px; height: 7px; background: {{g.a.c}}"></span><span style="flex: 1">{{g.a.n}}</span><span class="d" style="font-size: 17px; font-weight: 700">{{g.as}}</span></span>
+<span style="display: flex; align-items: center; gap: 6px; font-weight: {{g.bw}}; color: {{g.bc}}"><span class="dot" style="width: 7px; height: 7px; background: {{g.b.c}}"></span><span style="flex: 1">{{g.b.n}}</span><span class="d" style="font-size: 17px; font-weight: 700">{{g.bs}}</span></span>
+</span>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</main>
+
+<nav aria-label="Main" style="display: flex; background: var(--surface); border-top: 1px solid var(--line); padding: 4px 4px 18px">
+<a class="tab" href="Main.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="2.5"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/></svg>Now</a>
+<a class="tab" href="Schedule.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</a>
+<a class="tab" href="Team.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>Teams</a>
+<a class="tab on" href="#"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/></svg>Pools</a>
+<a class="tab" href="Brackets.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h5v5M3 19h5v-5M8 10v4h5M13 7h4v10h-4M17 12h4"/></svg>Brackets</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":390,"height":1560}}'>
+class Component extends DCLogic {
+renderVals() {
+const C = { lboro: '#7C4DDB', leeds: '#1F7AE0', shef: '#E0452B', notts: '#12A06A', york: '#D39B0B' };
+const tm = (n, c) => ({ n, c: C[c] });
+const row = (rank, team, w, l, dr, to, mine) => ({ rank, n: team.n, c: team.c, w, l, dr, pts: w * 2 + dr, to, fw: mine ? 700 : 500, bg: mine ? 'var(--accent-soft)' : 'transparent', edge: mine ? 'inset 3px 0 0 var(--accent)' : 'none', ls: rank === 3 ? 'dashed' : 'solid', lc: rank === 3 ? 'var(--ink3)' : 'var(--line)', ac: to === 'E' ? 'var(--win)' : 'var(--ink3)', ab: to === 'E' ? 'var(--win-soft)' : 'transparent' });
+const game = (t, a, as, b, bs) => ({ t, a, b, as, bs, aw: as > bs ? 700 : 500, bw: bs > as ? 700 : 500, ac: as < bs ? 'var(--ink3)' : 'var(--ink)', bc: bs < as ? 'var(--ink3)' : 'var(--ink)' });
+const L1 = tm('Loughborough 1', 'lboro'), S2 = tm('Sheffield 2', 'shef'), L5 = tm('Loughborough 5', 'lboro'), E3 = tm('Leeds 3', 'leeds');
+const E1 = tm('Leeds 1', 'leeds'), N2 = tm('Nottingham 2', 'notts'), L3 = tm('Loughborough 3', 'lboro'), S3 = tm('Sheffield 3', 'shef');
+const pools = [
+{ name: 'Pool A', open: 'true', gl: 'Games · 6', rot: 'rotate(180deg)', note: 'Sheffield 2 and Leeds 3 level on points and drew head-to-head; split on point difference.',
+rows: [row(1, L1, 3, 0, 0, 'E'), row(2, S2, 1, 1, 1, 'E'), row(3, E3, 1, 1, 1, 'G'), row(4, L5, 0, 3, 0, 'G')],
+games: [game('09:30 P1', L1, 9, L5, 7), game('09:30 P2', S2, 6, E3, 6), game('11:00 P2', L1, 10, E3, 5), game('11:00 P3', S2, 9, L5, 8), game('12:30 P1', L1, 11, S2, 4), game('12:30 P2', E3, 8, L5, 6)] },
+{ name: 'Pool B', open: 'false', gl: 'Games · 6', rot: 'none', note: '',
+rows: [row(1, E1, 3, 0, 0, 'E', true), row(2, L3, 2, 1, 0, 'E'), row(3, N2, 1, 2, 0, 'G'), row(4, S3, 0, 3, 0, 'G')],
+games: [] }
+];
+return { cls: (this.props.dark ?? false) ? 't-dark' : 't-light', pools };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Component sheet</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.t-light{--bg:#F3F4F1;--surface:#FFFFFF;--surface2:#ECEEEA;--ink:#11151B;--ink2:#3F4752;--ink3:#5F6774;--line:#DCDFDB;--accent:#1D4ED8;--accent-ink:#FFFFFF;--accent-soft:#E7EDFD;--live:#D92D20;--live-soft:#FDECEA;--win:#137A47;--win-soft:#E2F2E9;--draft:#5C3700;--draft-bg:#FFEFC7;--whatif:#6B3CC4;--whatif-soft:#F4EFFD;--shadow:0 1px 2px rgba(17,21,27,.06),0 6px 16px rgba(17,21,27,.05)}
+.t-dark{--bg:#0D1015;--surface:#161A21;--surface2:#222832;--ink:#F1F3F6;--ink2:#C2C9D3;--ink3:#8F98A5;--line:#2A303B;--accent:#7C9BFF;--accent-ink:#0D1015;--accent-soft:#1C2648;--live:#FF5B4A;--live-soft:#3A1A17;--win:#4CC98A;--win-soft:#14301F;--draft:#FFD596;--draft-bg:#3A2A0E;--whatif:#B596FF;--whatif-soft:#221B35;--shadow:0 1px 2px rgba(0,0,0,.5)}
+.app{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.4}
+.d{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-variant-numeric:tabular-nums}
+.h{margin:0 0 4px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}
+.cap{font-size:12px;font-weight:600;color:var(--ink3)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.mine{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+.hyp{border:1.5px dashed var(--whatif);background:var(--whatif-soft);box-shadow:none}
+.pb{display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:30px;padding:0 7px;box-sizing:border-box;border-radius:8px;background:var(--ink);color:var(--surface);font:700 19px/1 'Barlow Condensed',sans-serif}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.live{display:inline-flex;align-items:center;gap:6px;color:var(--live);font-weight:700;font-size:12px;letter-spacing:.08em}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--live);animation:pulse 1.6s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--live) 55%,transparent)}100%{box-shadow:0 0 0 9px transparent}}
+@media (prefers-reduced-motion: reduce){.live i{animation:none}}
+.chip{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink2);font:600 13px Inter,sans-serif;box-sizing:border-box}
+.chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.track{height:4px;border-radius:2px;background:var(--surface2);overflow:hidden}
+.track b{display:block;height:100%;background:var(--live)}
+.row{display:flex;align-items:center;gap:10px;min-height:34px}
+.nm{flex:1;font-size:16px}
+.sc{font:700 30px 'Barlow Condensed',sans-serif;font-variant-numeric:tabular-nums;min-width:26px;text-align:right}
+.gc{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.top{display:flex;align-items:center;gap:10px}
+.stg{font-size:13px;font-weight:600;color:var(--ink2)}
+.code{font:500 13px 'Barlow Condensed',sans-serif;color:var(--ink3)}
+.wl{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font:700 12px Inter,sans-serif}
+.Q{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:6px;font:700 13px Inter,sans-serif}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 14px Inter,sans-serif}
+.flash{animation:flash 1.4s ease-out 1 both;border-radius:6px}
+@keyframes flash{0%{background:color-mix(in srgb,var(--accent) 35%,transparent)}100%{background:transparent}}
+.sk{background:var(--surface2);border-radius:6px}
+.node{width:220px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:14px}
+.node .nh{display:flex;align-items:center;gap:6px;padding:6px 10px;font:600 13px 'Barlow Condensed',sans-serif;color:var(--ink3);border-bottom:1px solid var(--line);letter-spacing:.02em}
+.node .nr{display:flex;align-items:center;gap:8px;padding:0 10px;height:34px}
+.node .nr + .nr{border-top:1px solid var(--line)}
+.node .ns{font:700 19px 'Barlow Condensed',sans-serif;font-variant-numeric:tabular-nums}
+</style>
+</helmet>
+<div class="app {{cls}}" style="width: 1440px; min-height: 2080px; box-sizing: border-box; padding: 56px 64px; display: flex; flex-direction: column; gap: 48px">
+
+<section style="display: flex; flex-direction: column; gap: 16px">
+<h2 class="h">4.1 Game card · full variant · all states</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; align-items: start">
+
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">Upcoming</span>
+<article class="card gc"><div class="top"><span class="pb">P1</span><span class="stg">Pool B</span><span style="flex: 1"></span><span class="chip" style="height: 26px; font-size: 12px">in 18 min</span></div>
+<div class="d" style="font-size: 28px; font-weight: 700; line-height: 1">10:30</div>
+<div><div class="row"><span class="dot" style="background: #1F7AE0"></span><span class="nm">Leeds 1</span></div><div class="row"><span class="dot" style="background: #12A06A"></span><span class="nm">Nottingham 2</span></div></div>
+<div class="code">B1vB2</div></article></div>
+
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">Live · pulse + label + progress</span>
+<article class="card gc"><div class="top"><span class="pb">P1</span><span class="stg">Pool C</span><span style="flex: 1"></span><span class="live"><i></i>LIVE</span></div>
+<div><div class="row"><span class="dot" style="background: #E0452B"></span><span class="nm" style="font-weight: 700">Sheffield 1</span><span class="sc">5</span></div><div class="row"><span class="dot" style="background: #7C4DDB"></span><span class="nm">Loughborough 4</span><span class="sc">3</span></div></div>
+<div class="top"><div class="track" style="flex: 1"><b style="width: 58%"></b></div><span class="cap" style="color: var(--ink2)">14 of 24 min</span></div></article></div>
+
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">Finishing · past time, no result</span>
+<article class="card gc"><div class="top"><span class="pb">P2</span><span class="stg">Pool C</span><span style="flex: 1"></span><span class="lbl" style="color: var(--ink2)">Finishing</span></div>
+<div><div class="row"><span class="dot" style="background: #12A06A"></span><span class="nm">Nottingham 1</span><span class="sc" style="color: var(--ink3)">–</span></div><div class="row"><span class="dot" style="background: #E0452B"></span><span class="nm">Sheffield 4</span><span class="sc" style="color: var(--ink3)">–</span></div></div>
+<div class="top"><div class="track" style="flex: 1"><b style="width: 100%; background: var(--ink3)"></b></div><span class="cap">Awaiting result</span></div></article></div>
+
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">Final · winner bold + W, loser muted</span>
+<article class="card gc"><div class="top"><span class="pb">P1</span><span class="stg">Pool A</span><span style="flex: 1"></span><span class="lbl">Final</span></div>
+<div><div class="row"><span class="dot" style="background: #7C4DDB"></span><span class="nm" style="font-weight: 700">Loughborough 1</span><span class="wl" style="background: var(--win-soft); color: var(--win)">W</span><span class="sc">9</span></div><div class="row" style="color: var(--ink3)"><span class="dot" style="background: #7C4DDB"></span><span class="nm">Loughborough 5</span><span class="sc">7</span></div></div>
+<div class="code">A1vA3</div></article></div>
+
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">Final · draw (pools only)</span>
+<article class="card gc"><div class="top"><span class="pb">P2</span><span class="stg">Pool A</span><span style="flex: 1"></span><span class="lbl">Final · Draw</span></div>
+<div><div class="row"><span class="dot" style="background: #E0452B"></span><span class="nm" style="font-weight: 600">Sheffield 2</span><span class="wl" style="background: var(--surface2); color: var(--ink2)">D</span><span class="sc">6</span></div><div class="row"><span class="dot" style="background: #1F7AE0"></span><span class="nm" style="font-weight: 600">Leeds 3</span><span class="wl" style="background: var(--surface2); color: var(--ink2)">D</span><span class="sc">6</span></div></div>
+<div class="code">A2vA4</div></article></div>
+
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">Unresolved team</span>
+<article class="card gc"><div class="top"><span class="pb">P1</span><span class="stg">Quarter-final</span><span style="flex: 1"></span><span class="d" style="font-size: 18px; font-weight: 700">Sun 10:40</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><div class="row"><span class="dot" style="background: #1F7AE0"></span><span class="nm" style="font-weight: 600">Leeds 1</span></div>
+<div style="display: flex; gap: 10px"><span class="dot" style="background: transparent; border: 1.5px dashed var(--ink3); box-sizing: border-box; margin-top: 4px"></span><div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 16px; color: var(--ink2); font-style: italic">Winner 8v9</span><span style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink3)"><span class="dot" style="width: 7px; height: 7px; background: #7C4DDB"></span>Loughborough 3 <span>or</span> <span class="dot" style="width: 7px; height: 7px; background: #7C4DDB"></span>Loughborough 4</span></div></div></div>
+<div class="code">1v8</div></article></div>
+
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">My team involved</span>
+<article class="card gc mine"><div class="top"><span class="pb">P1</span><span class="stg">Pool B</span><span style="flex: 1"></span><span class="lbl" style="color: var(--accent)">Your game</span></div>
+<div><div class="row"><span class="dot" style="background: #1F7AE0"></span><span class="nm" style="font-weight: 700">Leeds 1</span><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent)" role="img" aria-label="My team"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg></div><div class="row"><span class="dot" style="background: #12A06A"></span><span class="nm">Nottingham 2</span></div></div>
+<div class="code">10:30 · B1vB2</div></article></div>
+
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">Hypothetical · dashed + IF</span>
+<article class="card gc hyp"><div class="top"><span class="pb">P1</span><span class="stg">Semi-final</span><span style="flex: 1"></span><span class="Q" style="background: var(--whatif); color: #fff">IF</span></div>
+<div><div class="row"><span class="dot" style="background: #1F7AE0"></span><span class="nm" style="font-weight: 700">Leeds 1</span><span class="cap" style="color: var(--whatif)">picked W</span></div><div class="row"><span class="dot" style="background: #D39B0B"></span><span class="nm">York 1</span></div></div>
+<div class="code">Sun 12:25 · SF 1v4</div></article></div>
+
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; align-items: start">
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">Just updated · one-off flash on the score</span>
+<article class="card gc"><div class="top"><span class="pb">P2</span><span class="stg">Pool C</span><span style="flex: 1"></span><span class="live"><i></i>LIVE</span></div>
+<div><div class="row"><span class="dot" style="background: #12A06A"></span><span class="nm">Nottingham 1</span><span class="sc flash" style="background: var(--accent-soft); padding: 0 4px">5</span></div><div class="row"><span class="dot" style="background: #E0452B"></span><span class="nm">Sheffield 4</span><span class="sc" style="padding: 0 4px">4</span></div></div></article></div>
+
+<div style="display: flex; flex-direction: column; gap: 8px; grid-column: span 2"><span class="cap">Compact row (Schedule / Team lists) · upcoming, live, final, mine</span>
+<div class="card" style="display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px"><span class="d" style="font-size: 20px; font-weight: 700; width: 46px">10:30</span><span class="pb">P2</span><div style="flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px"><span style="display: flex; align-items: center; gap: 8px"><span class="dot" style="background: #7C4DDB"></span>Loughborough 3</span><span style="display: flex; align-items: center; gap: 8px"><span class="dot" style="background: #E0452B"></span>Sheffield 3</span></div><span class="cap">Pool B</span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line)"><span class="live" style="width: 46px"><i></i>LIVE</span><span class="pb">P1</span><div style="flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px"><span style="display: flex; align-items: center; gap: 8px"><span class="dot" style="background: #E0452B"></span><b style="flex: 1">Sheffield 1</b><b class="d" style="font-size: 18px">5</b></span><span style="display: flex; align-items: center; gap: 8px"><span class="dot" style="background: #7C4DDB"></span><span style="flex: 1">Loughborough 4</span><span class="d" style="font-size: 18px; font-weight: 700">3</span></span></div><span class="cap">Pool C</span></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line); background: var(--accent-soft)"><span class="d" style="font-size: 20px; font-weight: 700; width: 46px; color: var(--ink3)">09:30</span><span class="pb">P3</span><div style="flex: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px"><span style="display: flex; align-items: center; gap: 8px"><span class="dot" style="background: #1F7AE0"></span><b style="flex: 1">Leeds 1</b><b class="d" style="font-size: 18px">11</b></span><span style="display: flex; align-items: center; gap: 8px; color: var(--ink3)"><span class="dot" style="background: #E0452B"></span><span style="flex: 1">Sheffield 3</span><span class="d" style="font-size: 18px; font-weight: 700">6</span></span></div><span class="wl" style="background: var(--win-soft); color: var(--win)">W</span></div>
+</div></div>
+
+<div style="display: flex; flex-direction: column; gap: 8px"><span class="cap">4.2 Team label · all variants</span>
+<div class="card" style="padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; font-size: 15px">
+<span style="display: flex; align-items: center; gap: 8px"><span class="dot" style="background: #E0452B"></span>Sheffield 2<span class="cap" style="margin-left: auto">default</span></span>
+<span style="display: flex; align-items: center; gap: 8px; font-weight: 700"><span class="dot" style="background: #E0452B"></span>Sheffield 2<span class="wl" style="background: var(--win-soft); color: var(--win)">W</span><span class="cap" style="margin-left: auto">winner</span></span>
+<span style="display: flex; align-items: center; gap: 8px; color: var(--ink3)"><span class="dot" style="background: #E0452B"></span>Sheffield 2<span class="cap" style="margin-left: auto">loser</span></span>
+<span style="display: flex; align-items: center; gap: 8px; color: var(--accent); font-weight: 700"><span class="dot" style="background: #1F7AE0"></span>Leeds 1<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg><span class="cap" style="margin-left: auto">my team</span></span>
+<span style="display: flex; align-items: center; gap: 8px; color: var(--ink2); font-style: italic"><span class="dot" style="border: 1.5px dashed var(--ink3); box-sizing: border-box"></span>1E<span class="cap" style="margin-left: auto; font-style: normal">placeholder</span></span>
+<span style="display: flex; align-items: center; gap: 8px; color: var(--ink2)"><span style="display: inline-flex"><span class="dot" style="background: #12A06A"></span><span class="dot" style="background: #D39B0B; margin-left: -3px; box-shadow: 0 0 0 1.5px var(--surface)"></span><span class="dot" style="background: #E0452B; margin-left: -3px; box-shadow: 0 0 0 1.5px var(--surface)"></span></span><span>1 of 3 teams</span><span style="color: var(--accent); font-weight: 600; font-size: 13px">Show</span><span class="cap" style="margin-left: auto">possible</span></span>
+</div></div>
+</div>
+</section>
+
+<div style="display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 40px; align-items: start">
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 class="h">4.3 Pool table</h2>
+<div class="card" style="overflow: hidden">
+<div style="display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line)"><b style="font-size: 17px">Pool B</b><span class="cap">Final</span></div>
+<table style="width: 100%; border-collapse: collapse; font-size: 14px">
+<thead><tr class="lbl" style="text-align: right"><th style="padding: 8px 4px 8px 16px; text-align: left; width: 18px">#</th><th style="text-align: left; padding: 8px 4px">Team</th><th style="padding: 8px 4px">W</th><th style="padding: 8px 4px">L</th><th style="padding: 8px 4px">D</th><th style="padding: 8px 6px">Pts</th><th style="padding: 8px 16px 8px 6px; text-align: right">Next</th></tr></thead>
+<tbody class="d" style="font-size: 18px; text-align: right">
+<tr style="background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent)"><td style="padding: 9px 4px 9px 16px; text-align: left; font-weight: 700">1</td><td style="text-align: left; font: 700 15px Inter, sans-serif"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="dot" style="background: #1F7AE0"></span>Leeds 1</span></td><td>3</td><td>0</td><td>0</td><td style="font-weight: 700; padding: 0 6px">6</td><td style="padding-right: 16px"><span class="chip" style="height: 24px; padding: 0 8px; font-size: 12px">→ E</span></td></tr>
+<tr style="border-top: 1px solid var(--line)"><td style="padding: 9px 4px 9px 16px; text-align: left">2</td><td style="text-align: left; font: 500 15px Inter, sans-serif"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="dot" style="background: #7C4DDB"></span>Loughborough 3</span></td><td>2</td><td>1</td><td>0</td><td style="font-weight: 700; padding: 0 6px">4</td><td style="padding-right: 16px"><span class="chip" style="height: 24px; padding: 0 8px; font-size: 12px">→ E</span></td></tr>
+<tr style="border-top: 1px dashed var(--ink3)"><td style="padding: 9px 4px 9px 16px; text-align: left">3</td><td style="text-align: left; font: 500 15px Inter, sans-serif"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="dot" style="background: #12A06A"></span>Nottingham 2</span></td><td>1</td><td>2</td><td>0</td><td style="font-weight: 700; padding: 0 6px">2</td><td style="padding-right: 16px"><span class="chip" style="height: 24px; padding: 0 8px; font-size: 12px; color: var(--ink3)">→ G</span></td></tr>
+<tr style="border-top: 1px solid var(--line)"><td style="padding: 9px 4px 9px 16px; text-align: left">4</td><td style="text-align: left; font: 500 15px Inter, sans-serif"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="dot" style="background: #E0452B"></span>Sheffield 3</span></td><td>0</td><td>3</td><td>0</td><td style="font-weight: 700; padding: 0 6px">0</td><td style="padding-right: 16px"><span class="chip" style="height: 24px; padding: 0 8px; font-size: 12px; color: var(--ink3)">→ G</span></td></tr>
+</tbody></table>
+<div style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink2)"><span style="border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--ink3)">CARRIED</span>Leeds 1 v Loughborough 3 counts again in Pool E</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 class="h">4.4 Bracket node, connectors, badges</h2>
+<div style="position: relative; height: 300px">
+<div class="node" style="position: absolute; left: 0; top: 0; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent)"><div class="nh">SUN 10:40 · P1<span style="flex: 1"></span><span class="live" style="font-size: 11px"><i></i>LIVE</span></div><div class="nr"><span class="dot" style="background: #1F7AE0"></span><b style="flex: 1">Leeds 1</b><span class="ns">6</span></div><div class="nr"><span class="dot" style="background: #7C4DDB"></span><span style="flex: 1">Loughborough 3</span><span class="ns">4</span></div></div>
+<div class="node" style="position: absolute; left: 0; top: 150px"><div class="nh">SUN 10:40 · P2</div><div class="nr"><span class="dot" style="background: #12A06A"></span><span style="flex: 1">Nottingham 1</span><span class="ns"></span></div><div class="nr"><span class="dot" style="background: #D39B0B"></span><span style="flex: 1">York 1</span><span class="ns"></span></div></div>
+<div style="position: absolute; left: 220px; top: 52px; width: 18px; height: 150px; border: 2px solid var(--line); border-left: 0; border-radius: 0 10px 10px 0; box-sizing: border-box"></div>
+<div style="position: absolute; left: 220px; top: 52px; width: 18px; height: 75px; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); border-radius: 0 10px 0 0; box-sizing: border-box"></div>
+<div style="position: absolute; left: 236px; top: 126px; width: 18px; border-top: 2px solid var(--accent)"></div>
+<div class="node" style="position: absolute; left: 254px; top: 76px; width: 150px; border-style: dashed"><div class="nh">SUN 12:25 · P1</div><div class="nr" style="font-style: italic; color: var(--ink2)">W 1v8</div><div class="nr" style="font-style: italic; color: var(--ink2)">W 4v5</div></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px; color: var(--ink2)">
+<span style="display: flex; align-items: center; gap: 6px"><span class="Q" style="background: var(--win); color: #fff">Q</span>Div 1 qualified</span>
+<span style="display: flex; align-items: center; gap: 6px"><span class="Q" style="border: 1.5px solid var(--win); color: var(--win)">q</span>Div 2 qualified</span>
+<span style="display: flex; align-items: center; gap: 6px"><span class="Q" style="background: var(--draft-bg); color: var(--draft)">GTG</span>Game to go</span>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 class="h">4.5 Path tree · one level</h2>
+<div class="card" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 8px"><span class="d" style="font-size: 22px; font-weight: 700">10:40</span><span class="pb" style="height: 26px; font-size: 17px">P1</span><b style="font-size: 14px">Quarter-final</b></div>
+<div style="font-size: 13px; color: var(--ink2)">vs Winner 8v9 · Loughborough 3 or 4</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding-left: 12px; border-left: 2px solid var(--line); margin-left: 6px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 14px"><span class="wl" style="background: var(--win-soft); color: var(--win); width: 40px">Win</span><span class="d" style="font-size: 17px; font-weight: 700">12:25 · P1</span>Semi-final</div>
+<div style="display: flex; align-items: center; gap: 8px; font-size: 14px"><span class="wl" style="background: var(--surface2); color: var(--ink2); width: 40px">Lose</span><span class="d" style="font-size: 17px; font-weight: 700">12:25 · P3</span>5th–8th semi</div>
+</div>
+</div>
+</section>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 40px; align-items: start">
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 class="h">4.6 Chips, badges, controls</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<span class="chip" style="background: var(--accent); color: var(--accent-ink); border-color: var(--accent)">in 12 min</span>
+<span class="chip" style="background: var(--live-soft); color: var(--live); border-color: transparent">Starting now</span>
+<span class="pb">P1</span><span class="pb">P2</span><span class="pb">P3</span>
+<span class="pb" style="height: 46px; min-width: 54px; font-size: 30px; border-radius: 10px">P1</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 12px; color: var(--ink3)">
+<span style="display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 6px; height: 6px; background: var(--win)"></span>Updated 2m ago</span>
+<span style="display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 6px; height: 6px; background: #C98A00"></span>Updated 14m ago</span>
+<span class="live"><i></i>LIVE</span>
+<span style="display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 8px; height: 8px; border: 1.5px solid var(--ink3); box-sizing: border-box"></span>Upcoming</span>
+<span style="display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 8px; height: 8px; background: var(--ink3)"></span>Final</span>
+</div>
+<div role="tablist" style="display: inline-flex; padding: 4px; border-radius: 12px; background: var(--surface2); gap: 4px; align-self: flex-start">
+<button role="tab" aria-selected="true" style="height: 36px; padding: 0 22px; border: 0; border-radius: 9px; background: var(--surface); color: var(--ink); font: 700 14px Inter, sans-serif; box-shadow: var(--shadow)">Sat</button>
+<button role="tab" aria-selected="false" style="height: 36px; padding: 0 22px; border: 0; border-radius: 9px; background: transparent; color: var(--ink2); font: 600 14px Inter, sans-serif">Sun</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button class="chip on">All pitches</button><button class="chip">Pitch 1</button><button class="chip">Pitch 2</button><button class="chip">Pitch 3</button><button class="chip">Pools A–D</button>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<h2 class="h">Search rows · empty · skeleton</h2>
+<div class="card" style="display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; min-height: 44px"><span style="width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid #E0452B; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font: 700 14px 'Barlow Condensed', sans-serif">S2</span><div style="flex: 1; display: flex; flex-direction: column"><b style="font-size: 15px">Sheffield 2</b><span style="font-size: 12px; color: var(--ink3)">Next 11:00 · P3 vs Leeds 3</span></div></div>
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid var(--line)"><span class="pb">P1</span><div style="flex: 1; display: flex; flex-direction: column"><b style="font-size: 15px">1v8 · Quarter-final</b><span style="font-size: 12px; color: var(--ink3)">Sun 10:40 · Leeds 1 v Winner 8v9</span></div></div>
+</div>
+<div class="card" style="padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center"><b>No games on Pitch 3 today</b><span style="font-size: 13px; color: var(--ink3)">Try another pitch or clear filters.</span></div>
+<div class="card" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 12px"><div style="display: flex; gap: 10px"><span class="sk" style="width: 36px; height: 30px"></span><span class="sk" style="width: 80px; height: 14px; align-self: center"></span></div><span class="sk" style="width: 70%; height: 16px"></span><span class="sk" style="width: 55%; height: 16px"></span></div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 class="h">Global banners · stackable</h2>
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--draft-bg); color: var(--draft); font-size: 14px; font-weight: 600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3 2 20h20zM12 10v4M12 17v.5"/></svg>Draft schedule — may change</div>
+<div style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 6px 12px 14px; border-radius: 12px; background: var(--accent); color: var(--accent-ink)"><div style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .85">From the TD · 10:05</span><span style="font-size: 14px; font-weight: 600">[Announcement text from the tournament director]</span></div><button aria-label="Dismiss announcement" style="width: 44px; height: 44px; border: 0; background: transparent; color: inherit; display: inline-flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--surface2); color: var(--ink2); font-size: 14px; font-weight: 600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0M12 19v.5M3 3l18 18"/></svg>Offline — showing data from 10:42</div>
+<div style="display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px; border-radius: 12px; background: var(--whatif); color: #fff; font-size: 14px; font-weight: 600"><span style="flex: 1">Viewing a hypothetical scenario</span><button style="height: 36px; padding: 0 12px; border-radius: 9px; border: 1px solid rgba(255,255,255,.5); background: transparent; color: #fff; font: 600 13px Inter, sans-serif">Share</button><button style="height: 36px; padding: 0 12px; border-radius: 9px; border: 0; background: #fff; color: #3E1F84; font: 700 13px Inter, sans-serif">Reset</button></div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 14px"><span style="flex: 1; color: var(--ink2)">Couldn’t reach the schedule — showing last data</span><button class="btn" style="height: 36px">Retry</button></div>
+<div style="display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 16px; border-radius: 999px; background: var(--ink); color: var(--surface); font-size: 14px; font-weight: 600; align-self: center; box-shadow: 0 12px 40px rgba(17,21,27,.25)">New version available<button style="height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--accent); color: var(--accent-ink); font: 700 13px Inter, sans-serif">Reload</button></div>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":2080}}'>
+class Component extends DCLogic {
+renderVals() {
+return { cls: (this.props.dark ?? false) ? 't-dark' : 't-light' };
+}
+}
+</script>
+</body>
+</html>

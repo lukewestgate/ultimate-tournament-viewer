@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Brackets — path list</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.t-light{--bg:#F3F4F1;--surface:#FFFFFF;--surface2:#ECEEEA;--ink:#11151B;--ink2:#3F4752;--ink3:#5F6774;--line:#DCDFDB;--accent:#1D4ED8;--accent-ink:#FFFFFF;--accent-soft:#E7EDFD;--live:#D92D20;--win:#137A47;--win-soft:#E2F2E9;--draft:#5C3700;--draft-bg:#FFEFC7;--shadow:0 1px 2px rgba(17,21,27,.06),0 6px 16px rgba(17,21,27,.05)}
+.t-dark{--bg:#0D1015;--surface:#161A21;--surface2:#222832;--ink:#F1F3F6;--ink2:#C2C9D3;--ink3:#8F98A5;--line:#2A303B;--accent:#7C9BFF;--accent-ink:#0D1015;--accent-soft:#1C2648;--live:#FF5B4A;--win:#4CC98A;--win-soft:#14301F;--draft:#FFD596;--draft-bg:#3A2A0E;--shadow:0 1px 2px rgba(0,0,0,.5)}
+.app{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.4}
+.d{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-variant-numeric:tabular-nums}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.live{display:inline-flex;align-items:center;gap:5px;color:var(--live);font:700 11px Inter,sans-serif;letter-spacing:.08em}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--live);animation:pulse 1.6s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--live) 55%,transparent)}100%{box-shadow:0 0 0 8px transparent}}
+@media (prefers-reduced-motion: reduce){.live i{animation:none}}
+.Q{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 5px;box-sizing:border-box;border-radius:6px;font:700 12px Inter,sans-serif}
+</style>
+</helmet>
+<div class="app {{cls}}" style="width: 390px; min-height: 1500px; display: flex; flex-direction: column">
+<header style="background: var(--surface); border-bottom: 1px solid var(--line); padding: 12px 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 8px">
+<h1 style="margin: 0; flex: 1; font-size: 24px; font-weight: 700">Brackets</h1>
+<div role="group" aria-label="Layout" style="display: inline-flex; padding: 3px; border-radius: 12px; background: var(--surface2); gap: 2px">
+<button aria-pressed="false" style="height: 38px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: var(--ink2); font: 600 13px Inter, sans-serif">Tree</button>
+<button aria-pressed="true" style="height: 38px; padding: 0 12px; border: 0; border-radius: 9px; background: var(--surface); color: var(--ink); font: 700 13px Inter, sans-serif; box-shadow: var(--shadow)">List</button>
+</div>
+</div>
+<div style="font-size: 13px; color: var(--ink2)">Board 1 · 1st–8th · every game reads top to bottom, with where each result goes.</div>
+</header>
+
+<main style="display: flex; flex-direction: column; gap: 22px; padding: 16px 16px 28px">
+<sc-for list="{{rounds}}" as="rd" hint-placeholder-count="4">
+<section style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: baseline; gap: 10px"><h2 style="margin: 0; font-size: 18px; font-weight: 700">{{rd.name}}</h2><span class="d" style="font-size: 16px; font-weight: 600; color: var(--ink3)">{{rd.when}}</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{rd.games}}" as="g" hint-placeholder-count="2">
+<article style="background: var(--surface); border: {{g.bd}}; border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; opacity: {{g.op}}">
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px 4px">
+<span class="d" style="font-size: 15px; font-weight: 700">{{g.code}}</span>
+<span class="d" style="font-size: 14px; color: var(--ink3); font-weight: 600">{{g.when}}</span>
+<span style="flex: 1"></span>
+<sc-if value="{{g.live}}" hint-placeholder-val="{{ false }}"><span class="live"><i></i>LIVE</span></sc-if>
+<span class="lbl">{{g.st}}</span>
+</div>
+<div style="display: flex; flex-direction: column; padding: 0 12px 8px">
+<sc-for list="{{g.teams}}" as="t" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 8px; min-height: 30px">
+<span class="dot" style="background: {{t.c}}; border: {{t.ring}}; box-sizing: border-box"></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25"><span style="font-size: 15px; font-weight: {{t.fw}}; font-style: {{t.fs}}; color: {{t.col}}">{{t.n}}</span><span style="font-size: 12px; color: var(--ink3)">{{t.sub}}</span></span>
+<span class="d" style="font-size: 20px; font-weight: 700">{{t.s}}</span>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{g.feeds}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; background: var(--surface2); font-size: 12px; color: var(--ink2)">
+<span><b style="color: var(--win)">W</b> → {{g.wTo}}</span>
+<span><b style="color: var(--ink3)">L</b> → {{g.lTo}}</span>
+</div>
+</sc-if>
+<sc-if value="{{g.place}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface2); font-size: 12px; color: var(--ink2)">{{g.place}}<span style="flex: 1"></span><span class="Q" style="background: {{g.qb}}; color: {{g.qc}}; border: {{g.qr}}">{{g.q}}</span></div>
+</sc-if>
+</article>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":390,"height":1500}}'>
+class Component extends DCLogic {
+renderVals() {
+const C = { lboro: '#7C4DDB', leeds: '#1F7AE0', shef: '#E0452B', notts: '#12A06A', york: '#D39B0B' };
+const t = (n, c, s, k, sub) => ({ n, c: c ? C[c] : 'transparent', ring: c ? 'none' : '1.5px dashed var(--ink3)', s: s === undefined ? '' : s, sub: sub || '', fw: k === 'w' || k === 'm' ? 700 : 500, fs: k === 'p' ? 'italic' : 'normal', col: k === 'l' ? 'var(--ink3)' : k === 'm' ? 'var(--accent)' : k === 'p' ? 'var(--ink2)' : 'var(--ink)' });
+const g = (code, when, st, teams, o) => Object.assign({ code, when, st, teams, live: false, feeds: false, wTo: '', lTo: '', place: false, q: '', qb: 'transparent', qc: 'var(--ink)', qr: 'none', bd: '1px solid var(--line)', op: 1 }, o || {});
+const mine = { bd: '1.5px solid var(--accent)' };
+const Q = { q: 'Q', qb: 'var(--win)', qc: '#fff' }, q = { q: 'q', qr: '1.5px solid var(--win)', qc: 'var(--win)' }, GTG = { q: 'GTG', qb: 'var(--draft-bg)', qc: 'var(--draft)' };
+const rounds = [
+{ name: 'Quarter-finals', when: '10:40', games: [
+g('1v8', 'P1', '12 of 28', [t('Leeds 1', 'leeds', 6, 'm'), t('Loughborough 3', 'lboro', 4)], Object.assign({ live: true, feeds: true, wTo: 'Semi-final · 12:25 P1', lTo: '5th–8th semi · 12:25 P3' }, mine)),
+g('4v5', 'P2', '12 of 28', [t('Nottingham 1', 'notts', 5), t('York 1', 'york', 5)], { live: true, feeds: true, wTo: 'Semi-final · 12:25 P1', lTo: '5th–8th semi · 12:25 P3' }),
+g('2v7', 'P3', '12 of 28', [t('Loughborough 1', 'lboro', 7, 'w'), t('Sheffield 2', 'shef', 5)], { live: true, feeds: true, wTo: 'Semi-final · 12:25 P2', lTo: '5th–8th semi · 13:00 P3' }),
+g('3v6', 'P1 · 11:15', 'Upcoming', [t('Sheffield 1', 'shef'), t('Loughborough 2', 'lboro')], { feeds: true, wTo: 'Semi-final · 12:25 P2', lTo: '5th–8th semi · 13:00 P3' })
+] },
+{ name: 'Semi-finals', when: '12:25', games: [
+g('1v4', 'P1', '', [t('Winner 1v8', '', '', 'p', 'Leeds 1 or Loughborough 3'), t('Winner 4v5', '', '', 'p', 'Nottingham 1 or York 1')], { feeds: true, wTo: 'Final · 14:45 P2', lTo: '3rd place · 14:10 P1', bd: '1.5px dashed var(--accent)' }),
+g('2v3', 'P2', '', [t('Winner 2v7', '', '', 'p', 'Loughborough 1 or Sheffield 2'), t('Winner 3v6', '', '', 'p', 'Sheffield 1 or Loughborough 2')], { feeds: true, wTo: 'Final · 14:45 P2', lTo: '3rd place · 14:10 P1' })
+] },
+{ name: 'Medal games', when: '14:10 – 14:45', games: [
+g('Final', '14:45 · P2', '', [t('Winner 1v4', '', '', 'p'), t('Winner 2v3', '', '', 'p')], Object.assign({ place: 'Winner 1st · loser 2nd' }, Q)),
+g('3rd place', '14:10 · P1', '', [t('Loser 1v4', '', '', 'p'), t('Loser 2v3', '', '', 'p')], Object.assign({ place: 'Winner 3rd · loser plays GTG' }, Q))
+] },
+{ name: 'Last Div 1 spot', when: '15:20', games: [
+g('Game to go', '15:20 · P1', '', [t('Loser 3rd place', '', '', 'p'), t('Winner 5th / 6th', '', '', 'p')], Object.assign({ place: 'Winner 4th, Div 1 · loser 5th' }, GTG))
+] }
+];
+return { cls: (this.props.dark ?? false) ? 't-dark' : 't-light', rounds };
+}
+}
+</script>
+</body>
+</html>

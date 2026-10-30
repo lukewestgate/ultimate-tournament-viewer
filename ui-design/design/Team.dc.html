@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Team detail — Leeds 1</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.t-light{--bg:#F3F4F1;--surface:#FFFFFF;--surface2:#ECEEEA;--ink:#11151B;--ink2:#3F4752;--ink3:#5F6774;--line:#DCDFDB;--accent:#1D4ED8;--accent-ink:#FFFFFF;--accent-soft:#E7EDFD;--live:#D92D20;--win:#137A47;--win-soft:#E2F2E9;--draft:#5C3700;--draft-bg:#FFEFC7;--whatif:#6B3CC4;--whatif-soft:#F4EFFD;--shadow:0 1px 2px rgba(17,21,27,.06),0 6px 16px rgba(17,21,27,.05)}
+.t-dark{--bg:#0D1015;--surface:#161A21;--surface2:#222832;--ink:#F1F3F6;--ink2:#C2C9D3;--ink3:#8F98A5;--line:#2A303B;--accent:#7C9BFF;--accent-ink:#0D1015;--accent-soft:#1C2648;--live:#FF5B4A;--win:#4CC98A;--win-soft:#14301F;--draft:#FFD596;--draft-bg:#3A2A0E;--whatif:#B596FF;--whatif-soft:#221B35;--shadow:0 1px 2px rgba(0,0,0,.5)}
+.app{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.4}
+.d{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.mine{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+.pb{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:26px;padding:0 6px;box-sizing:border-box;border-radius:7px;background:var(--ink);color:var(--surface);font:700 17px/1 'Barlow Condensed',sans-serif}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink2);font:600 13px Inter,sans-serif;box-sizing:border-box}
+.ib{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--ink);border-radius:12px;padding:0}
+.wl{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 6px;box-sizing:border-box;border-radius:6px;font:700 12px Inter,sans-serif}
+.W{background:var(--win-soft);color:var(--win)}
+.L{background:var(--surface2);color:var(--ink2)}
+.Q{display:inline-flex;align-items:center;justify-content:center;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;font:700 12px Inter,sans-serif;white-space:nowrap}
+.br{display:flex;flex-direction:column;gap:12px;margin-left:11px;padding-left:16px;border-left:2px solid var(--line)}
+.bn{display:flex;flex-direction:column;gap:3px}
+.bt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;font-weight:600}
+.bs{font-size:13px;color:var(--ink3)}
+.tm{font:700 18px 'Barlow Condensed',sans-serif;font-variant-numeric:tabular-nums}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;color:var(--ink3);font-size:11px;font-weight:600;text-decoration:none}
+.tab.on{color:var(--accent)}
+</style>
+</helmet>
+<div style="display: flex; gap: 80px; align-items: flex-start; font-family: Inter, system-ui, sans-serif">
+<sc-for list="{{themes}}" as="th" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; gap: 12px; width: 390px">
+<div style="font-size: 13px; font-weight: 600; color: #5F6774">{{th.label}} · 390 · Sunday 09:45</div>
+<div class="app {{th.cls}}" style="width: 390px; border-radius: 28px; overflow: hidden; border: 1px solid #C9CDC8; display: flex; flex-direction: column">
+
+<header style="display: flex; align-items: center; gap: 2px; padding: 8px; background: var(--surface)">
+<a class="ib" href="#" aria-label="Back to teams"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+<span style="flex: 1; font-size: 12px; color: var(--ink3); display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 6px; height: 6px; background: var(--win)"></span>Updated 1m ago</span>
+<button class="ib" aria-label="Search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+</header>
+
+<section style="background: var(--surface); border-bottom: 1px solid var(--line); display: flex; flex-direction: column">
+<div style="height: 8px; background: #1F7AE0"></div>
+<div style="padding: 16px 16px 18px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: flex-start; gap: 12px">
+<div style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+<span class="lbl" style="display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 8px; height: 8px; background: #1F7AE0"></span>Leeds</span>
+<h1 style="margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -.01em">Leeds 1</h1>
+</div>
+<button aria-pressed="true" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--accent); font: 700 14px Inter, sans-serif"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>My team</button>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span class="chip">Seed <b class="d" style="font-size: 17px; color: var(--ink)">1</b></span>
+<span class="chip">1st in Power pool E</span>
+<span class="chip">Sat 4W · 1D</span>
+</div>
+</div>
+</section>
+
+<main style="display: flex; flex-direction: column; gap: 28px; padding: 18px 16px 28px">
+
+<section class="card mine" style="padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 8px"><span class="lbl">Next · Quarter-final</span><span style="flex: 1"></span><span class="chip" style="background: var(--accent); color: var(--accent-ink); border-color: var(--accent); height: 30px">in 55 min</span></div>
+<div style="display: flex; align-items: center; gap: 14px">
+<span class="d" style="font-size: 60px; font-weight: 700; line-height: .9">10:40</span>
+<span class="pb" style="height: 42px; min-width: 50px; font-size: 28px; border-radius: 10px">P1</span>
+<span class="d" style="font-size: 15px; color: var(--ink3); font-weight: 600">1v8</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 19px; font-weight: 700"><span style="color: var(--ink3); font-weight: 500">vs</span> <span style="font-style: italic">Winner 8v9</span></div>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink2); flex-wrap: wrap"><span class="dot" style="width: 8px; height: 8px; background: #7C4DDB"></span>Loughborough 3 <span style="color: var(--ink3)">or</span> <span class="dot" style="width: 8px; height: 8px; background: #7C4DDB"></span>Loughborough 4</div>
+<div style="font-size: 12px; color: var(--live); font-weight: 700; display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 6px; height: 6px; background: var(--live)"></span>8v9 live now · 6–5</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; gap: 10px"><h2 style="margin: 0; font-size: 20px; font-weight: 700">Paths ahead</h2><span style="flex: 1"></span><a href="#" style="font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none">Collapse</a></div>
+<div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div class="bn"><div class="bt"><span class="tm">10:40</span><span class="pb">P1</span>Quarter-final</div><div class="bs">vs Winner 8v9 · Loughborough 3 or 4</div></div>
+<div class="br">
+<div class="bn"><div class="bt"><span class="wl W">Win</span><span class="tm">12:25 · P1</span>Semi-final</div><div class="bs">vs Winner 4v5 · Nottingham 1 or York 1</div></div>
+<div class="br">
+<div class="bt"><span class="wl W">Win</span><span class="tm">14:45 · P2</span>Final<span class="Q" style="background: var(--win); color: #fff">Q Div 1</span></div>
+<div class="bt"><span class="wl L">Lose</span><span class="tm">14:10 · P1</span>3rd place<span class="Q" style="background: var(--win); color: #fff">Q Div 1</span></div>
+</div>
+<div class="bn"><div class="bt"><span class="wl L">Lose</span><span class="tm">12:25 · P3</span>5th–8th semi</div><div class="bs">vs Loser 4v5 · Nottingham 1 or York 1</div></div>
+<div class="br">
+<div class="bt"><span class="wl W">Win</span><span class="tm">14:10 · P2</span>5th / 6th<span class="Q" style="border: 1.5px solid var(--win); color: var(--win)">q</span><span class="Q" style="background: var(--draft-bg); color: var(--draft)">GTG</span></div>
+<div class="bt"><span class="wl L">Lose</span><span class="tm">14:45 · P1</span>7th / 8th<span class="Q" style="border: 1.5px solid var(--win); color: var(--win)">q</span></div>
+</div>
+</div>
+</div>
+</section>
+
+<section style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 20px; font-weight: 700">Games</h2>
+<div class="card" style="display: flex; flex-direction: column">
+<sc-for list="{{games}}" as="g" hint-placeholder-count="7">
+<sc-if value="{{g.head}}" hint-placeholder-val="{{ false }}"><div class="lbl" style="padding: 12px 14px 4px; border-top: 1px solid {{g.sep}}">{{g.head}}</div></sc-if>
+<div style="display: flex; align-items: center; gap: 12px; padding: 9px 14px; min-height: 44px; box-sizing: border-box; background: {{g.bg}}">
+<span class="d" style="font-size: 17px; font-weight: 700; width: 40px; color: {{g.tc}}">{{g.t}}</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px"><span class="dot" style="width: 8px; height: 8px; background: {{g.c}}"></span>{{g.opp}}</span>
+<span style="font-size: 12px; color: var(--ink3)">{{g.stage}}</span>
+</div>
+<span class="d" style="font-size: 18px; font-weight: 700">{{g.s}}</span>
+<span class="wl {{g.r}}" style="width: 28px">{{g.rl}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section class="card" style="padding: 14px 16px; display: flex; align-items: center; gap: 12px">
+<div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+<b style="font-size: 15px">Spirit scores</b>
+<span style="font-size: 13px; color: var(--ink2)">Submitted for 4 of 5 games</span>
+<div style="display: flex; gap: 4px"><span style="flex: 1; height: 4px; border-radius: 2px; background: var(--win)"></span><span style="flex: 1; height: 4px; border-radius: 2px; background: var(--win)"></span><span style="flex: 1; height: 4px; border-radius: 2px; background: var(--win)"></span><span style="flex: 1; height: 4px; border-radius: 2px; background: var(--win)"></span><span style="flex: 1; height: 4px; border-radius: 2px; background: var(--surface2)"></span></div>
+</div>
+<a href="#" style="display: inline-flex; align-items: center; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line); color: var(--ink); font-weight: 600; font-size: 14px; text-decoration: none">Open form</a>
+</section>
+
+<a href="#" style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 52px; border-radius: 14px; border: 1.5px dashed var(--whatif); background: var(--whatif-soft); color: var(--whatif); font-weight: 700; font-size: 15px; text-decoration: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v12a3 3 0 0 0 3 3h9M15 15l3 3-3 3"/></svg>Explore what-ifs</a>
+</main>
+
+<nav aria-label="Main" style="display: flex; background: var(--surface); border-top: 1px solid var(--line); padding: 4px 4px 18px">
+<a class="tab" href="Main.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="2.5"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/></svg>Now</a>
+<a class="tab" href="Schedule.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</a>
+<a class="tab on" href="#"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>Teams</a>
+<a class="tab" href="Pools.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/></svg>Pools</a>
+<a class="tab" href="Brackets.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h5v5M3 19h5v-5M8 10v4h5M13 7h4v10h-4M17 12h4"/></svg>Brackets</a>
+</nav>
+</div>
+</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"show":{"editor":"enum","options":["both","light","dark"],"default":"both"},"$preview":{"width":860,"height":2000}}'>
+class Component extends DCLogic {
+renderVals() {
+const C = { lboro: '#7C4DDB', leeds: '#1F7AE0', shef: '#E0452B', notts: '#12A06A', york: '#D39B0B' };
+const g = (head, t, opp, c, stage, s, r) => ({ head, sep: head === 'Saturday' ? 'transparent' : 'var(--line)', t, opp, c: C[c], stage, s, r, rl: r === 'L' && s === '' ? '' : r === 'W' ? 'W' : r === 'D' ? 'D' : r === 'L' ? 'L' : '', bg: r === 'next' ? 'var(--accent-soft)' : 'transparent', tc: r === 'next' ? 'var(--accent)' : 'var(--ink3)' });
+const show = this.props.show ?? 'both';
+const all = [{ cls: 't-light', label: 'Light' }, { cls: 't-dark', label: 'Dark' }];
+const games = [
+g('Saturday', '09:30', 'v Sheffield 3', 'shef', 'Pool B · P3', '11–6', 'W'),
+g('', '10:30', 'v Nottingham 2', 'notts', 'Pool B · P1', '10–8', 'W'),
+g('', '11:30', 'v Loughborough 3', 'lboro', 'Pool B · P1 · carried to E', '9–7', 'W'),
+g('', '13:30', 'v Sheffield 1', 'shef', 'Power pool E · P2', '8–7', 'W'),
+g('', '14:30', 'v Loughborough 2', 'lboro', 'Power pool E · P1', '7–7', 'D'),
+g('Sunday', '10:40', 'v Winner 8v9', 'lboro', 'Quarter-final · P1', '', 'next')
+];
+games.forEach((x) => { if (x.r === 'D') x.r = 'L'; if (x.r === 'next') { x.r = ''; x.rl = ''; } });
+return { themes: show === 'light' ? [all[0]] : show === 'dark' ? [all[1]] : all, games };
+}
+}
+</script>
+</body>
+</html>

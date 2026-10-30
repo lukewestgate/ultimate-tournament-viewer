@@ -1,0 +1,20 @@
+{"v":3,"createdOnFiles":{"v":1,"at":"2026-10-30T12:00:00Z"},"title":"Ultimate Tournament Viewer","launch":{"view":"canvas"},"pages":[],"boards":{
+"Foundations.dc.html":{"x":0,"y":0,"w":1440,"h":1240,"title":"Style foundations"},
+"Components.dc.html":{"x":1520,"y":0,"w":1440,"h":2080,"title":"Component sheet"},
+"Main.dc.html":{"x":0,"y":2500,"w":860,"h":1720,"title":"Now — mobile (light + dark)"},
+"Team.dc.html":{"x":940,"y":2500,"w":860,"h":2000,"title":"Team detail — Leeds 1 (light + dark)"},
+"Schedule.dc.html":{"x":1880,"y":2500,"w":390,"h":1560,"title":"Schedule — list"},
+"Pools.dc.html":{"x":2350,"y":2500,"w":390,"h":1560,"title":"Pools"},
+"Brackets.dc.html":{"x":2820,"y":2500,"w":860,"h":1180,"title":"Brackets — mobile swipe (light + dark)"},
+"BracketsList.dc.html":{"x":3760,"y":2500,"w":390,"h":1500,"title":"Brackets — alt: path list"},
+"DesktopNow.dc.html":{"x":0,"y":4920,"w":1440,"h":980,"title":"Now — desktop departure board","expand":"fill"},
+"DesktopBrackets.dc.html":{"x":1520,"y":4920,"w":1440,"h":1260,"title":"Brackets — desktop","expand":"fill"},
+"Icon.dc.html":{"x":3040,"y":4920,"w":1280,"h":760,"title":"App icon & splash"}
+},
+"order":["Main.dc.html","Foundations.dc.html","Components.dc.html","Team.dc.html","Schedule.dc.html","Pools.dc.html","Brackets.dc.html","BracketsList.dc.html","DesktopNow.dc.html","DesktopBrackets.dc.html","Icon.dc.html"],
+"notes":{
+"t1":{"x":0,"y":-300,"text":"Foundations & components","kind":"title1","maxW":2960},
+"t2":{"x":0,"y":2200,"text":"Mobile · 390 px","kind":"title1","maxW":4150},
+"t3":{"x":0,"y":4620,"text":"Desktop · 1440 px, icon & splash","kind":"title1","maxW":4320}
+},
+"designSystems":[]}

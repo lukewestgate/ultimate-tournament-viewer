@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Schedule — list</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.t-light{--bg:#F3F4F1;--surface:#FFFFFF;--surface2:#ECEEEA;--ink:#11151B;--ink2:#3F4752;--ink3:#5F6774;--line:#DCDFDB;--accent:#1D4ED8;--accent-ink:#FFFFFF;--accent-soft:#E7EDFD;--live:#D92D20;--live-soft:#FDECEA;--win:#137A47;--win-soft:#E2F2E9;--shadow:0 1px 2px rgba(17,21,27,.06),0 6px 16px rgba(17,21,27,.05)}
+.t-dark{--bg:#0D1015;--surface:#161A21;--surface2:#222832;--ink:#F1F3F6;--ink2:#C2C9D3;--ink3:#8F98A5;--line:#2A303B;--accent:#7C9BFF;--accent-ink:#0D1015;--accent-soft:#1C2648;--live:#FF5B4A;--live-soft:#3A1A17;--win:#4CC98A;--win-soft:#14301F;--shadow:0 1px 2px rgba(0,0,0,.5)}
+.app{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.4}
+.d{font-family:'Barlow Condensed','Arial Narrow',sans-serif;font-variant-numeric:tabular-nums}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.pb{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:28px;padding:0 6px;box-sizing:border-box;border-radius:8px;background:var(--ink);color:var(--surface);font:700 18px/1 'Barlow Condensed',sans-serif}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink2);font:600 13px Inter,sans-serif;box-sizing:border-box;white-space:nowrap}
+.chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.ib{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--ink);border-radius:12px;padding:0}
+.live{display:inline-flex;align-items:center;gap:6px;color:var(--live);font-weight:700;font-size:11px;letter-spacing:.08em}
+.live i{width:8px;height:8px;border-radius:50%;background:var(--live);animation:pulse 1.6s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--live) 55%,transparent)}100%{box-shadow:0 0 0 9px transparent}}
+@media (prefers-reduced-motion: reduce){.live i{animation:none}}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;color:var(--ink3);font-size:11px;font-weight:600;text-decoration:none}
+.tab.on{color:var(--accent)}
+</style>
+</helmet>
+<div class="app {{cls}}" style="width: 390px; min-height: 1560px; display: flex; flex-direction: column">
+<header style="display: flex; flex-direction: column; gap: 10px; padding: 8px 0 12px; background: var(--surface); border-bottom: 1px solid var(--line)">
+<div style="display: flex; align-items: center; gap: 2px; padding: 0 8px 0 16px">
+<h1 style="margin: 0; flex: 1; font-size: 24px; font-weight: 700">Schedule</h1>
+<div role="group" aria-label="View" style="display: inline-flex; padding: 3px; border-radius: 12px; background: var(--surface2); gap: 2px">
+<button aria-pressed="true" aria-label="List view" style="width: 40px; height: 38px; border: 0; border-radius: 9px; background: var(--surface); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; box-shadow: var(--shadow)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.5M3 12h.5M3 18h.5"/></svg></button>
+<button aria-pressed="false" aria-label="Grid view" style="width: 40px; height: 38px; border: 0; border-radius: 9px; background: transparent; color: var(--ink3); display: inline-flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></button>
+</div>
+<button class="ib" aria-label="Search"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+</div>
+<div role="tablist" style="display: flex; margin: 0 16px; padding: 4px; border-radius: 12px; background: var(--surface2); gap: 4px">
+<button role="tab" aria-selected="true" style="flex: 1; height: 38px; border: 0; border-radius: 9px; background: var(--surface); color: var(--ink); font: 700 14px Inter, sans-serif; box-shadow: var(--shadow)">Saturday</button>
+<button role="tab" aria-selected="false" style="flex: 1; height: 38px; border: 0; border-radius: 9px; background: transparent; color: var(--ink2); font: 600 14px Inter, sans-serif">Sunday</button>
+</div>
+<div style="display: flex; gap: 8px; padding: 0 16px; overflow-x: auto">
+<button class="chip on">All pitches</button><button class="chip">P1</button><button class="chip">P2</button><button class="chip">P3</button><button class="chip">Stage</button><button class="chip"><span class="dot" style="background: #1F7AE0"></span>Leeds 1</button>
+</div>
+</header>
+
+<main style="display: flex; flex-direction: column; gap: 18px; padding: 16px 16px 28px; flex: 1">
+<sc-for list="{{slots}}" as="s" hint-placeholder-count="6">
+<section style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; gap: 10px">
+<span class="d" style="font-size: 26px; font-weight: 700; color: {{s.tc}}">{{s.t}}</span>
+<sc-if value="{{s.now}}" hint-placeholder-val="{{ false }}"><span style="display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: var(--live); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .08em">NOW</span></sc-if>
+<span style="flex: 1; height: 1px; background: {{s.rule}}"></span>
+<span style="font-size: 12px; font-weight: 600; color: var(--ink3)">{{s.note}}</span>
+</div>
+<div class="card" style="display: flex; flex-direction: column; overflow: hidden">
+<sc-for list="{{s.rows}}" as="r" hint-placeholder-count="3">
+<sc-if value="{{r.free}}" hint-placeholder-val="{{ false }}">
+<div style="display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-top: 1px solid {{r.sep}}; color: var(--ink3); font-size: 13px"><span style="min-width: 34px; height: 24px; border-radius: 8px; border: 1.5px dashed var(--line); display: inline-flex; align-items: center; justify-content: center; font: 700 15px 'Barlow Condensed', sans-serif">{{r.p}}</span>No game</div>
+</sc-if>
+<sc-if value="{{r.game}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-top: 1px solid {{r.sep}}; background: {{r.bg}}; box-shadow: {{r.edge}}">
+<span class="pb">{{r.p}}</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<sc-for list="{{r.teams}}" as="t" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: {{t.fw}}; color: {{t.col}}"><span class="dot" style="background: {{t.c}}"></span><span style="flex: 1">{{t.n}}</span><span class="d" style="font-size: 18px; font-weight: 700">{{t.s}}</span></div>
+</sc-for>
+</div>
+<div style="width: 58px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px">
+<sc-if value="{{r.live}}" hint-placeholder-val="{{ false }}"><span class="live"><i></i>LIVE</span></sc-if>
+<span style="font-size: 11px; font-weight: 600; color: var(--ink3); text-align: right">{{r.stage}}</span>
+</div>
+</div>
+</sc-if>
+</sc-for>
+</div>
+</section>
+</sc-for>
+</main>
+
+<nav aria-label="Main" style="display: flex; background: var(--surface); border-top: 1px solid var(--line); padding: 4px 4px 18px">
+<a class="tab" href="Main.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="2.5"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/></svg>Now</a>
+<a class="tab on" href="#"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Schedule</a>
+<a class="tab" href="Team.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>Teams</a>
+<a class="tab" href="Pools.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/></svg>Pools</a>
+<a class="tab" href="Brackets.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h5v5M3 19h5v-5M8 10v4h5M13 7h4v10h-4M17 12h4"/></svg>Brackets</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":390,"height":1560}}'>
+class Component extends DCLogic {
+renderVals() {
+const C = { lboro: '#7C4DDB', leeds: '#1F7AE0', shef: '#E0452B', notts: '#12A06A', york: '#D39B0B' };
+const t = (n, c, s, k) => ({ n, c: C[c], s: s === undefined ? '' : s, fw: k === 'w' ? 700 : k === 'm' ? 700 : 500, col: k === 'l' ? 'var(--ink3)' : k === 'm' ? 'var(--accent)' : 'var(--ink)' });
+const g = (p, stage, teams, o) => Object.assign({ p, stage, teams, game: true, free: false, live: false, bg: 'transparent', edge: 'none' }, o || {});
+const free = (p) => ({ p, free: true, game: false });
+const mine = { bg: 'var(--accent-soft)', edge: 'inset 3px 0 0 var(--accent)' };
+const slots = [
+{ t: '09:30', note: 'Final', rows: [g('P1', 'Pool A', [t('Loughborough 1', 'lboro', 9, 'w'), t('Loughborough 5', 'lboro', 7, 'l')]), g('P2', 'Pool A · Draw', [t('Sheffield 2', 'shef', 6), t('Leeds 3', 'leeds', 6)]), g('P3', 'Pool B', [t('Leeds 1', 'leeds', 11, 'm'), t('Sheffield 3', 'shef', 6, 'l')], mine)] },
+{ t: '10:00', now: true, note: '12 min left', rows: [g('P1', 'Pool C', [t('Sheffield 1', 'shef', 5, 'w'), t('Loughborough 4', 'lboro', 3)], { live: true }), g('P2', 'Pool C', [t('Nottingham 1', 'notts', 4), t('Sheffield 4', 'shef', 4)], { live: true }), free('P3')] },
+{ t: '10:30', note: 'in 18 min', rows: [g('P1', 'Pool B', [t('Leeds 1', 'leeds', '', 'm'), t('Nottingham 2', 'notts')], mine), g('P2', 'Pool B', [t('Loughborough 3', 'lboro'), t('Sheffield 3', 'shef')]), g('P3', 'Pool D', [t('Loughborough 2', 'lboro'), t('York 1', 'york')])] },
+{ t: '11:00', note: '', rows: [g('P1', 'Pool D', [t('Leeds 2', 'leeds'), t('Sheffield 5', 'shef')]), g('P2', 'Pool A', [t('Loughborough 1', 'lboro'), t('Leeds 3', 'leeds')]), g('P3', 'Pool A', [t('Sheffield 2', 'shef'), t('Loughborough 5', 'lboro')])] },
+{ t: '11:30', note: '', rows: [g('P1', 'Pool B', [t('Leeds 1', 'leeds', '', 'm'), t('Loughborough 3', 'lboro')], mine), g('P2', 'Pool B', [t('Nottingham 2', 'notts'), t('Sheffield 3', 'shef')]), free('P3')] },
+{ t: '12:00', note: '', rows: [g('P1', 'Pool C', [t('Sheffield 1', 'shef'), t('Nottingham 1', 'notts')]), g('P2', 'Pool C', [t('Loughborough 4', 'lboro'), t('Sheffield 4', 'shef')]), g('P3', 'Pool D', [t('Loughborough 2', 'lboro'), t('Leeds 2', 'leeds')])] }
+];
+slots.forEach((s) => { s.now = !!s.now; s.tc = s.t === '09:30' ? 'var(--ink3)' : 'var(--ink)'; s.rule = s.now ? 'var(--live)' : 'var(--line)'; s.rows.forEach((r, i) => { r.sep = i === 0 ? 'transparent' : 'var(--line)'; }); });
+return { cls: (this.props.dark ?? false) ? 't-dark' : 't-light', slots };
+}
+}
+</script>
+</body>
+</html>

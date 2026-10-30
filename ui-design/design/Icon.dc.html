@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App icon and splash</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.cap{font-size:13px;font-weight:600;color:#5F6774}
+</style>
+</helmet>
+<div style="width: 1280px; height: 760px; box-sizing: border-box; padding: 56px 64px; background: #FFFFFF; color: #11151B; font-family: Inter, system-ui, sans-serif; display: flex; gap: 64px; align-items: flex-start">
+
+<div style="display: flex; flex-direction: column; gap: 14px">
+<svg width="360" height="360" viewBox="0 0 512 512" role="img" aria-label="App icon: a disc in flight over a pitch">
+<rect width="512" height="512" rx="112" fill="{{bg}}"/>
+<rect x="72" y="150" width="368" height="212" rx="10" fill="none" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="12"/>
+<path d="M150 150v212M362 150v212" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="12"/>
+<path d="M118 318C170 300 200 270 222 248" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="10" stroke-linecap="round" stroke-dasharray="2 22"/>
+<ellipse cx="282" cy="232" rx="84" ry="34" fill="{{disc}}"/>
+<ellipse cx="282" cy="226" rx="52" ry="17" fill="none" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="7"/>
+</svg>
+<span class="cap">App icon · 512, iOS / Android rounded</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="position: relative; width: 220px; height: 220px">
+<svg width="220" height="220" viewBox="0 0 512 512" role="img" aria-label="Maskable icon, full bleed">
+<rect width="512" height="512" fill="{{bg}}"/>
+<rect x="112" y="178" width="288" height="166" rx="8" fill="none" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="11"/>
+<path d="M172 178v166M340 178v166" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="11"/>
+<ellipse cx="270" cy="246" rx="66" ry="27" fill="{{disc}}"/>
+<ellipse cx="270" cy="241" rx="40" ry="13" fill="none" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="6"/>
+<circle cx="256" cy="256" r="205" fill="none" stroke="#FFFFFF" stroke-opacity=".6" stroke-width="3" stroke-dasharray="10 10"/>
+</svg>
+</div>
+<span class="cap">Maskable · full bleed, art inside the 80% safe zone (dashed)</span>
+</div>
+<div style="display: flex; align-items: flex-end; gap: 20px">
+<svg width="96" height="96" viewBox="0 0 512 512" role="img" aria-label="Icon at 96 px"><rect width="512" height="512" rx="112" fill="{{bg}}"/><rect x="72" y="150" width="368" height="212" rx="10" fill="none" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="16"/><path d="M150 150v212M362 150v212" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="16"/><ellipse cx="282" cy="232" rx="88" ry="38" fill="{{disc}}"/></svg>
+<svg width="48" height="48" viewBox="0 0 512 512" role="img" aria-label="Icon at 48 px"><rect width="512" height="512" rx="112" fill="{{bg}}"/><rect x="72" y="150" width="368" height="212" rx="10" fill="none" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="24"/><ellipse cx="270" cy="240" rx="100" ry="46" fill="{{disc}}"/></svg>
+<svg width="32" height="32" viewBox="0 0 512 512" role="img" aria-label="Favicon at 32 px"><rect width="512" height="512" rx="112" fill="{{bg}}"/><ellipse cx="256" cy="256" rx="150" ry="70" fill="{{disc}}"/></svg>
+<span class="cap" style="padding-bottom: 6px">96 · 48 · 32 (detail drops as it shrinks)</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px">
+<div style="width: 300px; height: 620px; border-radius: 32px; border: 1px solid #C9CDC8; overflow: hidden; background: {{bg}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; position: relative">
+<svg width="112" height="112" viewBox="0 0 512 512" aria-hidden="true">
+<rect width="512" height="512" rx="112" fill="#FFFFFF" fill-opacity=".06"/>
+<rect x="72" y="150" width="368" height="212" rx="10" fill="none" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="12"/>
+<path d="M150 150v212M362 150v212" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="12"/>
+<ellipse cx="282" cy="232" rx="84" ry="34" fill="{{disc}}"/>
+<ellipse cx="282" cy="226" rx="52" ry="17" fill="none" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="7"/>
+</svg>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px">
+<span style="font: 700 34px/1 'Barlow Condensed', sans-serif; color: #FFFFFF; letter-spacing: .01em">Tournament Viewer</span>
+<span style="font-size: 13px; color: #AEB8D0">Unofficial · community made</span>
+</div>
+<div style="width: 120px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.14); overflow: hidden"><div style="width: 45%; height: 100%; background: {{disc}}"></div></div>
+<span style="position: absolute; bottom: 28px; font-size: 12px; color: #AEB8D0">Loading schedule…</span>
+</div>
+<span class="cap">Splash · 390 × 844 shown at 300</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"ground":{"editor":"color","default":"#0E1A3A","options":["#0E1A3A","#11151B","#1D4ED8"]},"disc":{"editor":"color","default":"#FF6A3D","options":["#FF6A3D","#FFC23D","#4CC98A"]},"$preview":{"width":1280,"height":760}}'>
+class Component extends DCLogic {
+renderVals() {
+return { bg: this.props.ground ?? '#0E1A3A', disc: this.props.disc ?? '#FF6A3D' };
+}
+}
+</script>
+</body>
+</html>
