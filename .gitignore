@@ -4,3 +4,4 @@ dev-dist
 *.local
 .DS_Store
 coverage
+test/_scratch
