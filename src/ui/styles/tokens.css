@@ -1,0 +1,29 @@
+/* Design tokens from spec/uvt-ui-handoff (HANDOFF.md, Foundations). */
+.t-light {
+  color-scheme: light;
+  --bg: #F3F4F1; --surface: #FFFFFF; --surface2: #ECEEEA; --line: #DCDFDB;
+  --ink: #11151B; --ink2: #3F4752; --ink3: #5F6774;
+  --accent: #1D4ED8; --accent-ink: #FFFFFF; --accent-soft: #E7EDFD;
+  --live: #D92D20; --live-soft: #FDECEA;
+  --win: #137A47; --win-soft: #E2F2E9;
+  --draft: #FFEFC7; --draft-ink: #5C3700;
+  --whatif: #6B3CC4; --whatif-soft: #F4EFFD;
+  --replay: #0B6E7F; --replay-soft: #E1F3F5;
+  --cap: #B45309; --error: #B42318;
+  --shadow: 0 1px 2px rgba(17,21,27,.06), 0 6px 16px rgba(17,21,27,.05);
+  --shadow-sheet: 0 12px 40px rgba(17,21,27,.18);
+}
+.t-dark {
+  color-scheme: dark;
+  --bg: #0D1015; --surface: #161A21; --surface2: #222832; --line: #2A303B;
+  --ink: #F1F3F6; --ink2: #C2C9D3; --ink3: #8F98A5;
+  --accent: #7C9BFF; --accent-ink: #0D1015; --accent-soft: #1C2648;
+  --live: #FF5B4A; --live-soft: #3A1A17;
+  --win: #4CC98A; --win-soft: #14301F;
+  --draft: #3A2A0E; --draft-ink: #FFD596;
+  --whatif: #B596FF; --whatif-soft: #221B35;
+  --replay: #4FC3D4; --replay-soft: #10282C;
+  --cap: #FBBF5C; --error: #FF8A7F;
+  --shadow: 0 1px 2px rgba(0,0,0,.5);
+  --shadow-sheet: 0 12px 40px rgba(0,0,0,.6);
+}
