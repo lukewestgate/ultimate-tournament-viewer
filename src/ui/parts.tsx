@@ -178,10 +178,10 @@ export function isMine(c: ReturnType<typeof useT>, v: GameView) {
   return c.isFollowed(v.sides[0].team, v.g.division) || c.isFollowed(v.sides[1].team, v.g.division);
 }
 
-function rowClass(c: ReturnType<typeof useT>, v: GameView, base: string) {
+function rowClass(c: ReturnType<typeof useT>, v: GameView, base: string, noMine = false) {
   return [
     base,
-    isMine(c, v) ? 'mine-row' : '',
+    !noMine && isMine(c, v) ? 'mine-row' : '',
     v.hypothetical ? 'hyp' : '',
     v.simulated ? 'simrow' : '',
     v.status === 'notPlayed' ? 'np' : '',
@@ -203,12 +203,12 @@ const pressable = (onOpen?: () => void) =>
     : {};
 
 /** Compact game row with status: pitch, both sides with scores, stage, status (timelines, lists). */
-export function GameRow({ v, showTime, showDay, onOpen, extra }: { v: GameView; showTime?: boolean; showDay?: boolean; onOpen?: () => void; extra?: ReactNode }) {
+export function GameRow({ v, showTime, showDay, onOpen, extra, noMine }: { v: GameView; showTime?: boolean; showDay?: boolean; onOpen?: () => void; extra?: ReactNode; noMine?: boolean }) {
   const c = useT();
   const w = winnerSide(v);
   if (v.g.isBye) return <ByeRow v={v} showTime={showTime} />;
   return (
-    <div className={rowClass(c, v, 'grow')} {...pressable(onOpen)}>
+    <div className={rowClass(c, v, 'grow', noMine)} {...pressable(onOpen)}>
       {showTime && (
         <span className="gtime">
           {showDay && <span className="gday">{v.g.day.slice(0, 3)}</span>}

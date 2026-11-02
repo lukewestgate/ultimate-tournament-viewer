@@ -7,6 +7,7 @@ import './ui/styles/shell.css';
 import './ui/styles/rows.css';
 import './ui/styles/now.css';
 import './ui/styles/schedule.css';
+import './ui/styles/teams.css';
 import { App } from './ui/App';
 
 createRoot(document.getElementById('root')!).render(
