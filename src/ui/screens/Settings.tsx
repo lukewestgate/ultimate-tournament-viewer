@@ -317,7 +317,7 @@ function ManualMerge() {
   const c = useT();
   const [a, setA] = useState('');
   const [b, setB] = useState('');
-  const names = c.t.teams.map((t) => t.name);
+  const names = [...new Set(c.t.teams.map((t) => t.name))].sort((x, y) => x.localeCompare(y));
   return (
     <details className="manual-merge">
       <summary className="small">Merge two names by hand</summary>
