@@ -9,6 +9,7 @@ import './ui/styles/now.css';
 import './ui/styles/schedule.css';
 import './ui/styles/teams.css';
 import './ui/styles/pools.css';
+import './ui/styles/brackets.css';
 import { App } from './ui/App';
 
 createRoot(document.getElementById('root')!).render(

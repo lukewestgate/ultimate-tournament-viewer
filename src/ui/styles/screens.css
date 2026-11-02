@@ -41,29 +41,6 @@ details.dev summary { cursor: pointer; font-weight: 600; color: var(--ink2); }
 .gd-time { font-size: 22px; font-weight: 700; }
 
 
-/* ---------- brackets ---------- */
-.bracket-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.bracket { list-style: none; margin: 0; padding: 0; display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; }
-.round { list-style: none; flex: 0 0 232px; display: flex; flex-direction: column; gap: 8px; }
-.round-games { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: space-around; gap: 10px; flex: 1; }
-.bnode { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); font-size: 13px; }
-.bnode.dim { opacity: .38; }
-.bnode.ifreq { border-style: dashed; }
-.bn-top { display: flex; align-items: center; gap: 6px; font-size: 12px; }
-.bn-side { display: flex; align-items: center; gap: 6px; min-height: 22px; }
-.bn-side > .tn { flex: 1; }
-.bn-side.hl { color: var(--accent); }
-.bn-side:not(.won) .tn-name { font-weight: 500; }
-.place-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.place-list li { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; }
-.place-list li.hl { border-color: var(--accent); background: var(--accent-soft); }
-@media (max-width: 899px) {
-  .bracket { flex-direction: column; overflow: visible; }
-  .round { flex: none; display: none; }
-  .round.cur, .round.places { display: flex; }
-}
-.standings { list-style: none; margin: 0; padding: 0; }
-.place { width: 32px; font-size: 18px; }
 
 /* ---------- info ---------- */
 .info { display: flex; flex-direction: column; gap: 20px; }

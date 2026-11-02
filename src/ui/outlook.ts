@@ -124,3 +124,28 @@ export function stakeLines(view: View, gameId: string, team?: string): StakeLine
 function withoutTagSafe(s: string) {
   return s.replace(/\s*\([A-Za-z]{1,4}\d{0,2}\)\s*$/, '');
 }
+
+/** Where a placement game's winner and loser go next, in short form: "SF1 11:00 P1" or "3rd". */
+export function feedsOf(view: View, gameId: string): { winner?: string; loser?: string } {
+  const v = view.byId.get(gameId);
+  const f = v && view.format.divisions[v.g.division ?? ''];
+  if (!v || !f) return {};
+  const tz = view.t.timeZone;
+  const hhmm = (e: number) => new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(new Date(e));
+  const places = Object.keys(f.places ?? {}).map(Number);
+  const minPlace = places.length ? Math.min(...places) : 1;
+  const out: { winner?: string; loser?: string } = {};
+  for (const take of ['winner', 'loser'] as const) {
+    for (const [key, e] of Object.entries(f.sources)) {
+      if (e.source.kind !== 'gameResult' || e.source.game !== gameId || e.source.take !== take) continue;
+      const [kind, id] = key.split(':');
+      const t = kind === 'game' ? view.byId.get(id) : undefined;
+      if (t) out[take] = [t.g.code?.replace(/[[\]]/g, ''), hhmm(t.g.start), t.g.pitch.label ? `P${t.g.pitch.label}` : ''].filter(Boolean).join(' ');
+    }
+    if (!out[take]) {
+      const place = Object.entries(f.places ?? {}).find(([, e]) => e.source.kind === 'gameResult' && e.source.game === gameId && e.source.take === take)?.[0];
+      if (place) out[take] = ordinal(Number(place) - minPlace + 1);
+    }
+  }
+  return out;
+}
