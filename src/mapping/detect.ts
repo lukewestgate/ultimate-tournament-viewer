@@ -581,7 +581,9 @@ export function detectMapping(wb: Workbook): DetectResult {
     for (const p of detectPoolTables(t)) {
       const names: string[] = [];
       for (let r = p.headerRow + 1; r <= p.lastRow; r++) names.push(foldName(cell(t, r, p.teamCol)));
-      const key = names.filter(Boolean).sort().join('|');
+      let key = names.filter(Boolean).sort().join('|');
+      // Tables with no names yet (power pools before results) are told apart by their slots.
+      if (!key) key = `slots:${p.name}`;
       if (seenSets.includes(key)) continue;
       seenSets.push(key);
       mapping.pools.push(p);
