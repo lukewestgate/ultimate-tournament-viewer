@@ -11,6 +11,7 @@ import './ui/styles/teams.css';
 import './ui/styles/pools.css';
 import './ui/styles/brackets.css';
 import './ui/styles/game.css';
+import './ui/styles/search.css';
 import { App } from './ui/App';
 
 createRoot(document.getElementById('root')!).render(

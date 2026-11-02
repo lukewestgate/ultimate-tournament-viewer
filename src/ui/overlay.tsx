@@ -9,8 +9,15 @@ interface Toast {
 
 interface OverlayApi {
   toast: (text: string, action?: Toast['action']) => void;
-  openSheet: (content: ReactNode, opts?: { title?: string; wide?: boolean }) => void;
+  openSheet: (content: ReactNode, opts?: SheetOpts) => void;
   closeSheet: () => void;
+}
+
+interface SheetOpts {
+  title?: string;
+  wide?: boolean;
+  /** Full-screen on phones, top-anchored palette on desktop, no grab or header. */
+  palette?: boolean;
 }
 
 const Ctx = createContext<OverlayApi>({ toast: () => {}, openSheet: () => {}, closeSheet: () => {} });
@@ -18,19 +25,19 @@ export const useOverlay = () => useContext(Ctx);
 
 export function OverlayProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [sheet, setSheet] = useState<{ content: ReactNode; title?: string; wide?: boolean } | undefined>();
+  const [sheet, setSheet] = useState<({ content: ReactNode } & SheetOpts) | undefined>();
   const nextId = useRef(1);
   const toast = useCallback((text: string, action?: Toast['action']) => {
     const id = nextId.current++;
     setToasts((ts) => [...ts, { id, text, action }]);
     setTimeout(() => setToasts((ts) => ts.filter((t) => t.id !== id)), action ? 8000 : 4000);
   }, []);
-  const openSheet = useCallback((content: ReactNode, opts?: { title?: string; wide?: boolean }) => setSheet({ content, ...opts }), []);
+  const openSheet = useCallback((content: ReactNode, opts?: SheetOpts) => setSheet({ content, ...opts }), []);
   const closeSheet = useCallback(() => setSheet(undefined), []);
   return (
     <Ctx.Provider value={{ toast, openSheet, closeSheet }}>
       {children}
-      {sheet && <Sheet title={sheet.title} wide={sheet.wide} onClose={closeSheet}>{sheet.content}</Sheet>}
+      {sheet && <Sheet title={sheet.title} wide={sheet.wide} palette={sheet.palette} onClose={closeSheet}>{sheet.content}</Sheet>}
       <div className="toasts" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className="toast">
@@ -54,11 +61,11 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
 }
 
 /** Bottom sheet on phones, centred modal on desktop. */
-export function Sheet({ title, wide, onClose, children }: { title?: string; wide?: boolean; onClose: () => void; children: ReactNode }) {
+export function Sheet({ title, wide, palette, onClose, children }: { title?: string; wide?: boolean; palette?: boolean; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
-    ref.current?.focus();
+    if (!ref.current?.contains(document.activeElement)) ref.current?.focus();
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
@@ -69,16 +76,20 @@ export function Sheet({ title, wide, onClose, children }: { title?: string; wide
     };
   }, [onClose]);
   return (
-    <div className="scrim" onClick={onClose}>
-      <div className={`sheet${wide ? ' wide' : ''}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref} onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-grab" aria-hidden="true" />
-        <div className={`sheet-head${title ? '' : ' bare'}`}>
-          {title && <h2>{title}</h2>}
-          <span style={{ flex: 1 }} />
-          <button className="ib" onClick={onClose} aria-label="Close">
-            <IClose />
-          </button>
-        </div>
+    <div className={`scrim${palette ? ' top' : ''}`} onClick={onClose}>
+      <div className={`sheet${wide ? ' wide' : ''}${palette ? ' palette' : ''}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref} onClick={(e) => e.stopPropagation()}>
+        {!palette && (
+          <>
+            <div className="sheet-grab" aria-hidden="true" />
+            <div className={`sheet-head${title ? '' : ' bare'}`}>
+              {title && <h2>{title}</h2>}
+              <span style={{ flex: 1 }} />
+              <button className="ib" onClick={onClose} aria-label="Close">
+                <IClose />
+              </button>
+            </div>
+          </>
+        )}
         <div className="sheet-body">{children}</div>
       </div>
     </div>

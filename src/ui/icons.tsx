@@ -96,6 +96,7 @@ export const IMore = make(
     <circle cx="19" cy="12" r="1.2" />
   </>,
 );
+export const IClock = make(<path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2" />);
 export const ICheck = make(<path d="M5 12l5 5L20 7" />);
 export const IPlay = make(<path d="M7 4l13 8-13 8z" />);
 export const IPause = make(<path d="M8 4v16M16 4v16" />);

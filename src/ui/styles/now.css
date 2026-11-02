@@ -172,3 +172,4 @@
 .replay-more .rm-time { display: flex; align-items: baseline; gap: 8px; }
 .replay-more .rm-time .d { font-size: 34px; font-weight: 700; }
 .jump-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+button.link { border: 0; background: transparent; padding: 0; cursor: pointer; font-family: inherit; }
