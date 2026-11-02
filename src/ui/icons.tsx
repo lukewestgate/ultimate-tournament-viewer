@@ -97,6 +97,8 @@ export const IMore = make(
   </>,
 );
 export const IClock = make(<path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2" />);
+export const IList = make(<path d="M4 5h16v5H4zM4 14h16v5H4z" />);
+export const ISliders = make(<path d="M4 7h10M18 7h2M14 5v4M4 17h4M12 17h8M8 15v4" />);
 export const ICheck = make(<path d="M5 12l5 5L20 7" />);
 export const IPlay = make(<path d="M7 4l13 8-13 8z" />);
 export const IPause = make(<path d="M8 4v16M16 4v16" />);

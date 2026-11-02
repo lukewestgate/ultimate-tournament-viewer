@@ -35,10 +35,6 @@ details.dev summary { cursor: pointer; font-weight: 600; color: var(--ink2); }
 
 
 
-/* ---------- info ---------- */
-.info { display: flex; flex-direction: column; gap: 20px; }
-.info-sec summary { cursor: pointer; }
-.info-lines p { margin: 8px 0 0; font-size: 14px; color: var(--ink2); white-space: pre-wrap; }
 
 /* ---------- what-if & replay ---------- */
 .replay-wrap { display: flex; flex-direction: column; gap: 6px; }
