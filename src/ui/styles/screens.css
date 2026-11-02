@@ -46,19 +46,6 @@ details.dev summary { cursor: pointer; font-weight: 600; color: var(--ink2); }
 
 /* ---------- settings ---------- */
 .settings, .diag { display: flex; flex-direction: column; gap: 22px; max-width: 760px; width: 100%; margin: 0 auto; }
-.problem { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
-.problem.problem { color: var(--draft-ink); }
-.problem.suggestion { color: var(--ink2); }
-.day-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
-.day-row > b { width: 90px; }
-.day-row input[type=date] { max-width: 170px; }
-.mini { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink3); }
-.mini .field { width: 90px; }
-.delay { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.merge-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
-.points-row { display: flex; gap: 12px; }
-.tb-list { margin: 0; padding-left: 22px; display: flex; flex-direction: column; }
-.tb-list li { display: flex; align-items: center; gap: 4px; min-height: 44px; border-bottom: 1px solid var(--line); }
 table.cmp { border-collapse: collapse; width: 100%; font-size: 14px; }
 table.cmp th, table.cmp td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
 table.cmp thead th { font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: .06em; }

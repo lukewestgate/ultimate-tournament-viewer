@@ -42,6 +42,11 @@ export interface TCtx {
 
 const Ctx = createContext<TCtx | undefined>(undefined);
 
+/** The tournament context when inside one (App settings can open from anywhere). */
+export function useMaybeT(): TCtx | undefined {
+  return useContext(Ctx);
+}
+
 export function useT(): TCtx {
   const c = useContext(Ctx);
   if (!c) throw new Error('useT outside a tournament');

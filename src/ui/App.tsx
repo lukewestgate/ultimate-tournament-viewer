@@ -106,6 +106,9 @@ function RouteView({ route }: { route: Route }) {
   }
 }
 
+/** Screens drawn as sub-pages with a back header instead of the tab shell. */
+const SUB_PAGES: string[] = ['settings', 'diagnostics', 'manual', 'format'];
+
 function TournamentScreen({ route }: { route: Extract<Route, { name: 'tournament' }> }) {
   const c = useT();
   useEffect(() => {
@@ -115,6 +118,12 @@ function TournamentScreen({ route }: { route: Extract<Route, { name: 'tournament
     window.scrollTo(0, 0);
   }, [route.tab, route.arg]);
   const S = screens.tournament[route.tab] ?? screens.tournament.now;
+  if (SUB_PAGES.includes(route.tab))
+    return (
+      <Suspense fallback={<Loading text="Loading…" />}>
+        <S arg={route.arg} />
+      </Suspense>
+    );
   return (
     <TournamentShell>
       <Suspense fallback={<div className="spinner" style={{ margin: '40px auto' }} />}>
