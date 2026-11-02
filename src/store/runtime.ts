@@ -127,7 +127,7 @@ export class TournamentRuntime {
     this.clearTimer();
     this.set({ fetching: true, lastAttempt: Date.now() });
     try {
-      const fix = fixtureUrl(this.id);
+      const fix = await fixtureUrl(this.id);
       if (fix) {
         const buf = await (await fetch(fix)).arrayBuffer();
         const X = await loadXlsx();
