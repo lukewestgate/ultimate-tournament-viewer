@@ -111,7 +111,7 @@ a.tn:hover .tn-name { text-decoration: underline; }
 .gside > .tn { flex: 1; }
 .gside.lost { color: var(--ink3); }
 .gscore { font-size: 19px; min-width: 18px; text-align: right; }
-.gmeta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; max-width: 40%; }
+.gmeta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; max-width: 34%; }
 .gstage { font-size: 12px; font-weight: 600; color: var(--ink3); white-space: nowrap; }
 .mine-row { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
 .hyp { outline: 1.5px dashed var(--whatif); outline-offset: -2px; background: var(--whatif-soft); }
@@ -268,3 +268,24 @@ table.sgrid tr.now th { color: var(--live); }
 .gd-score { font-size: 32px; }
 .gd-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .gd-time { font-size: 22px; font-weight: 700; }
+
+/* ---------- teams ---------- */
+.club-group { display: flex; flex-direction: column; }
+.club-name { padding: 10px 14px 0; }
+.team-head { display: flex; flex-direction: column; gap: 8px; }
+.th-top { display: flex; align-items: center; gap: 10px; }
+.th-top h1 { font-size: 26px; }
+.th-record { font-size: 20px; font-weight: 700; }
+.finishes { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+.fin { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 10px; background: var(--surface2); color: var(--ink3); }
+.fin.can { background: var(--accent-soft); color: var(--ink); }
+.need { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--surface2); }
+.need.first { background: var(--win-soft); color: var(--win); font-weight: 600; }
+.path { display: flex; flex-direction: column; gap: 6px; }
+.path-game { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.path-branches { list-style: none; margin: 0; padding-left: 16px; border-left: 2px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.path-branches li { display: flex; flex-direction: column; gap: 4px; }
+.path-branches li > .tag { align-self: flex-start; }
+.stake { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--win-soft); color: var(--win); font-weight: 600; font-size: 14px; }
+.search-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 14px; border: 0; background: var(--surface); text-align: left; }
+.search-row:hover { background: var(--surface2); }

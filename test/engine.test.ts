@@ -227,3 +227,13 @@ describe('team paths and possible games', () => {
     expect([...(v.leads.get('F#4') ?? [])]).toContain('8v9');
   });
 });
+
+import { fuzzyScore } from '../src/ui/screens/Search';
+describe('search', () => {
+  it('fuzzy team names', () => {
+    expect(fuzzyScore('lboro 2', 'Loughborough 2')).toBeGreaterThan(0);
+    expect(fuzzyScore('lboro 2', 'Loughborough 3')).toBe(0);
+    expect(fuzzyScore('shef', 'Sheffield 1')).toBeGreaterThan(fuzzyScore('shef', 'Leeds 1'));
+    expect(fuzzyScore('york', 'York 1 (N4)')).toBe(80);
+  });
+});

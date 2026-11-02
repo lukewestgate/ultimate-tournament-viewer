@@ -6,6 +6,8 @@ import { Home } from './Home';
 import { Add } from './Add';
 import { Now } from './Now';
 import { Schedule } from './Schedule';
+import { Teams } from './Teams';
+import { Team } from './Team';
 
 export interface ScreenProps {
   arg?: string;
@@ -36,5 +38,5 @@ export const screens: {
   Home,
   Add,
   AppSettings: Placeholder,
-  tournament: { now: Now, schedule: Schedule, teams: AllGames, pools: AllGames, brackets: AllGames, info: AllGames },
+  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: AllGames, brackets: AllGames, info: AllGames },
 };

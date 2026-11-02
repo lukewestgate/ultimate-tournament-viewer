@@ -116,7 +116,7 @@ export function TournamentProvider({ id, children, fallback }: { id: string; chi
   useEffect(() => {
     if (view?.dropped.length) {
       const g = view.t.games.find((x) => x.id === view.dropped[0]);
-      setParams({ if: encodeScenario(pruneScenario(scenario, view.dropped)) || null });
+      setParams({ if: encodeScenario(pruneScenario(scenario, view.dropped)) || '_' });
       overlay.toast(`Real score arrived for ${g?.code ?? 'a game'}. Your what-if result was removed.`);
     }
   }, [view?.dropped.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -160,7 +160,7 @@ export function TournamentProvider({ id, children, fallback }: { id: string; chi
       store.runtime(id).resummarize();
     },
     scenario,
-    setScenario: (s) => setParams({ if: encodeScenario(s) || null }),
+    setScenario: (s) => setParams({ if: encodeScenario(s) || '_' }),
     whatIf: Object.keys(scenario).length > 0 || ifParam !== null,
     replayAt,
     setReplayAt: (at) => setParams({ at: at === undefined ? null : wallParam(at, t.timeZone) }),
