@@ -47,6 +47,8 @@ export interface Resolution {
   places: Map<string, { place: number; team?: string; possible: string[]; label?: string }[]>;
   checks: Map<string, SourceStatus>;
   mismatches: string[];
+  /** "A#1" -> where 1st in pool A goes (game labels or pools). */
+  leads: Map<string, Set<string>>;
 }
 
 interface Val {
@@ -82,6 +84,8 @@ export function resolve(input: ResolveInput): Resolution {
   const poolStart = (p: Pool) => Math.min(...(poolGames.get(p.name) ?? []).map((g) => g.start), Infinity);
 
   const visiting = new Set<string>();
+  const consumers: string[] = [];
+  const leads = new Map<string, Set<string>>();
 
   // ---------- pool slots and standings
   const slotSeed = (p: Pool, i: number): number | undefined => {
@@ -96,7 +100,9 @@ export function resolve(input: ResolveInput): Resolution {
     const s = p.slots.find((x) => x.slot === slot);
     const entry = fmt(p.division)?.sources[key];
     if (p.stage === 'powerPool' && entry) {
+      consumers.push(`Pool ${p.name}`);
       const v = evalSource(entry.source, p.division, poolStart(p), key);
+      consumers.pop();
       return v;
     }
     return { team: s?.team, possible: s?.team ? [s.team] : [], label: slot };
@@ -157,6 +163,13 @@ export function resolve(input: ResolveInput): Resolution {
   };
 
   const poolFinishVal = (p: Pool, place: number): Val => {
+    const top = consumers[consumers.length - 1];
+    if (top) {
+      const k = `${p.name}#${place}`;
+      const set = leads.get(k) ?? new Set<string>();
+      set.add(top);
+      leads.set(k, set);
+    }
     const st = standingOf(p);
     const label = `${place}${p.name}`;
     const hyp = anyHypothetical(poolGames.get(p.name) ?? []);
@@ -269,7 +282,9 @@ export function resolve(input: ResolveInput): Resolution {
       const team = hidden ? undefined : sheet;
       return { team, possible: team ? [team] : [], label: sheetLabel ?? (hidden ? 'To be decided' : g.slots[i]), fromSheet: Boolean(team) };
     }
+    consumers.push(g.stage === 'powerPool' && g.pool ? `Pool ${g.pool}` : gameLabel(g));
     const v = evalSource(entry.source, g.division, g.start, key);
+    consumers.pop();
     const projected = v.team;
     let team = projected;
     let fromSheet = false;
@@ -317,7 +332,7 @@ export function resolve(input: ResolveInput): Resolution {
     list.sort((a, b) => a.place - b.place);
     if (list.length) places.set(dk, list);
   }
-  return { sides, standings, places, checks, mismatches: uniq(mismatches) };
+  return { sides, standings, places, checks, mismatches: uniq(mismatches), leads };
 }
 
 /** Position number of a slot code ("8" -> 8, "W3" -> 3). */
