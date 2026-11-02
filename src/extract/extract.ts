@@ -364,7 +364,8 @@ export function extract(wb: Workbook, mapping: Mapping, opts: ExtractOptions): T
       const a = slotPool(g.slots[0]);
       if (a && a === slotPool(g.slots[1]) && poolByName.has(a)) {
         const p = poolByName.get(a)!;
-        if (!p.division || !g.division || p.division === g.division) pool = a;
+        const fitsSize = !p.slots.length || Math.max(x!.n, y!.n) <= p.slots.length;
+        if (fitsSize && (!p.division || !g.division || p.division === g.division)) pool = a;
       }
       if (!pool && t1 && t2 && !(x && y)) {
         const p1 = poolOfTeam.get(`${g.division ?? ''}::${t1}`);

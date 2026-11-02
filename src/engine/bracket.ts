@@ -78,7 +78,7 @@ export function buildBoards(t: Tournament, format: Format): Board[] {
       const from = positions.length ? positions[0] - minPos + 1 : 1;
       const to = positions.length ? positions[positions.length - 1] - minPos + 1 : gs.length * 2;
       const title = positions.length ? `${ord(from)}–${ord(to)}` : 'Placement games';
-      boards.push({ division: d, title: blocks.size > 1 || !t.divisions.length ? title : `${d ? `${d} · ` : ''}${title}`, from, to, rounds: rounds.filter(Boolean), positions });
+      boards.push({ division: d, title, from, to, rounds: rounds.filter(Boolean), positions });
     }
   }
   return boards;

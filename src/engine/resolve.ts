@@ -229,7 +229,8 @@ export function resolve(input: ResolveInput): Resolution {
     return { possible: uniq(sts.flatMap((s) => s.rows.map((r) => r.team))), label };
   };
 
-  const gameLabel = (g: Game) => g.code?.replace(/[[\]]/g, '') ?? `${g.day.slice(0, 3)} ${g.time} P${g.pitch.label}`;
+  const gameLabel = (g: Game) =>
+    g.code?.replace(/[[\]]/g, '') ?? (g.slots[0] && g.slots[1] ? `${g.slots[0]}v${g.slots[1]}` : `${g.day.slice(0, 3)} ${g.time} P${g.pitch.label}`);
 
   const gameResultVal = (g: Game, take: 'winner' | 'loser'): Val => {
     const [a, b] = sidesOf(g);

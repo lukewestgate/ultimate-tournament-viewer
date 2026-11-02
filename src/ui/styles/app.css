@@ -289,3 +289,58 @@ table.sgrid tr.now th { color: var(--live); }
 .stake { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--win-soft); color: var(--win); font-weight: 600; font-size: 14px; }
 .search-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 14px; border: 0; background: var(--surface); text-align: left; }
 .search-row:hover { background: var(--surface2); }
+
+/* ---------- pools ---------- */
+.pool-chips { padding-bottom: 2px; }
+.pool-grid { display: grid; gap: 16px; }
+@media (min-width: 1000px) { .pool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+.pool-card { overflow: hidden; display: flex; flex-direction: column; }
+.pool-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 6px; }
+.pool-head h3 { font-size: 18px; }
+.pool-head h3 a { color: inherit; text-decoration: none; }
+.table-scroll { overflow-x: auto; }
+.pt-team { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.tie-mark { color: var(--ink3); margin-left: 2px; font-weight: 700; }
+.ochip { flex: none; font: 600 11px Inter, sans-serif; padding: 2px 6px; border-radius: 6px; white-space: nowrap; }
+.ochip.good { background: var(--win-soft); color: var(--win); }
+.ochip.bad { background: var(--surface2); color: var(--ink3); }
+.ochip.open { background: var(--accent-soft); color: var(--accent); }
+.explain { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.ex-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--ink2); padding: 0 14px; }
+.explain .ex-row { padding: 0; }
+.ex-row.tied { padding-top: 8px; padding-bottom: 8px; }
+.ex-badge { flex: none; min-width: 32px; height: 22px; border-radius: 6px; background: var(--surface2); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+.leads { padding: 10px 14px; color: var(--ink2); border-top: 1px solid var(--line); }
+.td-note { display: flex; align-items: center; gap: 8px; padding: 0 14px 8px; font-size: 13px; }
+.rules-line { margin: 0; }
+
+/* ---------- brackets ---------- */
+.bracket-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.bracket { list-style: none; margin: 0; padding: 0; display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; }
+.round { list-style: none; flex: 0 0 232px; display: flex; flex-direction: column; gap: 8px; }
+.round-games { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; justify-content: space-around; gap: 10px; flex: 1; }
+.bnode { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); font-size: 13px; }
+.bnode.dim { opacity: .38; }
+.bnode.ifreq { border-style: dashed; }
+.bn-top { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.bn-side { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.bn-side > .tn { flex: 1; }
+.bn-side.hl { color: var(--accent); }
+.bn-side:not(.won) .tn-name { font-weight: 500; }
+.place-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.place-list li { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; }
+.place-list li.hl { border-color: var(--accent); background: var(--accent-soft); }
+@media (max-width: 899px) {
+  .bracket { flex-direction: column; overflow: visible; }
+  .round { flex: none; display: none; }
+  .round.cur, .round.places { display: flex; }
+}
+.standings { list-style: none; margin: 0; padding: 0; }
+.place { width: 32px; font-size: 18px; }
+
+/* ---------- info ---------- */
+.info { display: flex; flex-direction: column; gap: 20px; }
+.info-sec summary { cursor: pointer; }
+.info-lines p { margin: 8px 0 0; font-size: 14px; color: var(--ink2); white-space: pre-wrap; }
+a.chip { text-decoration: none; display: inline-flex; align-items: center; color: var(--ink2); }
+a.chip.on { color: var(--surface); }

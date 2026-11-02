@@ -1,30 +1,17 @@
 import type { ComponentType } from 'react';
 import type { TournamentTab } from '../router';
-import { useT } from '../ctx';
-import { GameRow, Section } from '../parts';
 import { Home } from './Home';
 import { Add } from './Add';
 import { Now } from './Now';
 import { Schedule } from './Schedule';
 import { Teams } from './Teams';
 import { Team } from './Team';
+import { Pools } from './Pools';
+import { Brackets, StandingsScreen } from './Brackets';
+import { Info } from './Info';
 
 export interface ScreenProps {
   arg?: string;
-}
-
-/** Placeholder while a screen is being built: every game in order. */
-function AllGames() {
-  const c = useT();
-  return (
-    <Section title="Games">
-      <div className="card list">
-        {c.view.games.filter((v) => c.inDiv(v.g.division)).map((v) => (
-          <GameRow key={v.g.id} v={v} showTime showDay />
-        ))}
-      </div>
-    </Section>
-  );
 }
 
 const Placeholder = () => <div className="page"><p className="muted">Coming soon.</p></div>;
@@ -38,5 +25,5 @@ export const screens: {
   Home,
   Add,
   AppSettings: Placeholder,
-  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: AllGames, brackets: AllGames, info: AllGames },
+  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen },
 };
