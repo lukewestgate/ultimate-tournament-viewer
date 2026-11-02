@@ -35,6 +35,9 @@ export interface TournamentSettings {
 
 export interface TournamentSummary {
   title: string;
+  games?: number;
+  pools?: number;
+  primary?: { team: string; next?: { start: number; pitch: string; opponent?: string }; place?: number };
   firstStart?: number;
   lastEnd?: number;
   days: { name: string; date: string; dateSource: string }[];

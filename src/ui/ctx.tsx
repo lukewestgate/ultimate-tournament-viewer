@@ -9,7 +9,7 @@ import type { Processed } from '../store/pipeline';
 import { parseTeamKey, teamKey, type TournamentSettings } from '../store/settings';
 import { setParams, useParam } from './router';
 import { clubColors } from './colors';
-import { useOverlay } from './overlay';
+import { OverlayProvider, useOverlay } from './overlay';
 import { zonedEpoch, wallClock } from '../engine/time';
 
 export interface TCtx {
@@ -153,8 +153,12 @@ export function TournamentProvider({ id, children, fallback }: { id: string; chi
       if (has && primary === k) primary = next[0]?.key;
       if (!has && !primary) primary = k;
       store.update(id, { followed: next, primary });
+      store.runtime(id).resummarize();
     },
-    setPrimary: (k) => store.update(id, { primary: k }),
+    setPrimary: (k) => {
+      store.update(id, { primary: k });
+      store.runtime(id).resummarize();
+    },
     scenario,
     setScenario: (s) => setParams({ if: encodeScenario(s) || null }),
     whatIf: Object.keys(scenario).length > 0 || ifParam !== null,
@@ -169,7 +173,12 @@ export function TournamentProvider({ id, children, fallback }: { id: string; chi
     simulate,
     setSimulate,
   };
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  // Sheets and toasts opened inside a tournament render inside its context.
+  return (
+    <Ctx.Provider value={value}>
+      <OverlayProvider>{children}</OverlayProvider>
+    </Ctx.Provider>
+  );
 }
 
 function wallParam(epoch: number, tz: string): string {

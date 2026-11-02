@@ -38,10 +38,13 @@ export function processWorkbook(id: string, wb: Workbook, saved?: { mapping?: Ma
   return { tournament, mapping, format, problems, hints: detected.hints, redetected };
 }
 
-export function summarize(p: Processed, lastFetched?: number, error?: string): TournamentSummary {
+export function summarize(p: Processed, lastFetched?: number, error?: string, primary?: string): TournamentSummary {
   const t = p.tournament;
   const sched = t.games.filter((g) => !g.unscheduled);
   return {
+    primary: primary ? primaryInfo(t, primary) : undefined,
+    pools: t.pools.length,
+    games: sched.length,
     title: t.title,
     firstStart: sched.length ? Math.min(...sched.map((g) => g.start)) : undefined,
     lastEnd: sched.length ? Math.max(...sched.map((g) => g.end)) : undefined,
@@ -53,6 +56,21 @@ export function summarize(p: Processed, lastFetched?: number, error?: string): T
     lastFetched,
     error,
   };
+}
+
+/** The primary team's next game, or its final place, for the home card. */
+function primaryInfo(t: Tournament, key: string): TournamentSummary['primary'] {
+  const i = key.indexOf('::');
+  const division = key.slice(0, i) || undefined;
+  const name = key.slice(i + 2);
+  const mine = t.games.filter((g) => !g.unscheduled && !g.isBye && (division === undefined || g.division === division) && g.teams.includes(name));
+  const next = mine.find((g) => g.scores[0] === undefined && !g.marks && g.end > Date.now());
+  const place = t.finalStandings?.find((s) => s.team === name && (division === undefined || s.division === division))?.place;
+  if (next) {
+    const opp = next.teams[0] === name ? next.teams[1] : next.teams[0];
+    return { team: name, next: { start: next.start, pitch: next.pitch.label, opponent: opp } };
+  }
+  return { team: name, place };
 }
 
 /** Games whose score or teams changed between two versions (for the update highlight). */

@@ -114,7 +114,7 @@ export class TournamentRuntime {
     const changed = new Map(this.state.changed);
     if (!fromCache && !force) for (const id of changedGames(prev?.tournament, processed.tournament)) changed.set(id, Date.now());
     this.set({ phase: 'ready', step: undefined, processed, workbook: wb, fromCache, lastSuccess: at ?? this.state.lastSuccess, changed });
-    saveTournament({ ...s, summary: summarize(processed, at ?? s.summary?.lastFetched) });
+    saveTournament({ ...s, summary: summarize(processed, at ?? s.summary?.lastFetched, undefined, s.primary) });
   }
 
   private log(kind: string, ok: boolean, extra: { bytes?: number; error?: string } = {}) {
@@ -173,6 +173,14 @@ export class TournamentRuntime {
       if (!this.state.processed) saveTournament({ ...s, summary: { ...(s.summary ?? { title: s.id, days: [], divisions: 0, teams: 0, problems: 0, datesGuessed: false }), error: err.kind } });
     }
     this.schedule();
+  }
+
+  /** Refresh the saved summary (e.g. after the primary team changes). */
+  resummarize() {
+    const p = this.state.processed;
+    if (!p) return;
+    const s = this.settings();
+    saveTournament({ ...s, summary: summarize(p, this.state.lastSuccess, undefined, s.primary) });
   }
 
   /** Save a new mapping (manual edit, AI, shared link) and re-read. */

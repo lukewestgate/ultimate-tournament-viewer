@@ -2,8 +2,8 @@ import type { ComponentType } from 'react';
 import type { TournamentTab } from '../router';
 import { useT } from '../ctx';
 import { GameRow, Section } from '../parts';
-import { href } from '../router';
-import { store, useStore } from '../../store/app';
+import { Home } from './Home';
+import { Add } from './Add';
 
 export interface ScreenProps {
   arg?: string;
@@ -23,23 +23,6 @@ function AllGames() {
   );
 }
 
-function Home() {
-  useStore();
-  return (
-    <div className="page">
-      <h1>Tournaments</h1>
-      <a className="btn primary" href={href({ name: 'add' })}>Add tournament</a>
-      <ul>
-        {store.saved().map((s) => (
-          <li key={s.id}>
-            <a href={`#/t/${encodeURIComponent(s.id)}/now`}>{s.summary?.title ?? s.id}</a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 const Placeholder = () => <div className="page"><p className="muted">Coming soon.</p></div>;
 
 export const screens: {
@@ -49,7 +32,7 @@ export const screens: {
   tournament: Partial<Record<TournamentTab, ComponentType<ScreenProps>>> & { now: ComponentType<ScreenProps> };
 } = {
   Home,
-  Add: Placeholder,
+  Add,
   AppSettings: Placeholder,
   tournament: { now: AllGames },
 };
