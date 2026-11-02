@@ -10,12 +10,14 @@ import { Pools } from './Pools';
 import { Brackets, StandingsScreen } from './Brackets';
 import { Info } from './Info';
 import { WhatIf } from './WhatIf';
+import { Settings } from './Settings';
+import { AppSettings } from './AppSettings';
+import { Diagnostics } from './Diagnostics';
 
 export interface ScreenProps {
   arg?: string;
 }
 
-const Placeholder = () => <div className="page"><p className="muted">Coming soon.</p></div>;
 
 export const screens: {
   Home: ComponentType;
@@ -25,6 +27,6 @@ export const screens: {
 } = {
   Home,
   Add,
-  AppSettings: Placeholder,
-  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen, whatif: WhatIf },
+  AppSettings,
+  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen, whatif: WhatIf, settings: Settings, diagnostics: Diagnostics },
 };
