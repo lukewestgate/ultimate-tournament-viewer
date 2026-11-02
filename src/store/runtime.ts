@@ -132,7 +132,6 @@ export class TournamentRuntime {
         const buf = await (await fetch(fix)).arrayBuffer();
         const X = await loadXlsx();
         const wb = workbookFromXlsx(X, buf);
-        wb.title ??= this.id.replace('fixture:', '');
         this.lastFull = Date.now();
         this.log('fixture', true, { bytes: buf.byteLength });
         this.apply(wb, false, Date.now());

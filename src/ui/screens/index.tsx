@@ -4,6 +4,8 @@ import { useT } from '../ctx';
 import { GameRow, Section } from '../parts';
 import { Home } from './Home';
 import { Add } from './Add';
+import { Now } from './Now';
+import { Schedule } from './Schedule';
 
 export interface ScreenProps {
   arg?: string;
@@ -34,5 +36,5 @@ export const screens: {
   Home,
   Add,
   AppSettings: Placeholder,
-  tournament: { now: AllGames },
+  tournament: { now: Now, schedule: Schedule, teams: AllGames, pools: AllGames, brackets: AllGames, info: AllGames },
 };

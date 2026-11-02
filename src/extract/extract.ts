@@ -277,11 +277,15 @@ export function extract(wb: Workbook, mapping: Mapping, opts: ExtractOptions): T
     return near.length === 1 ? near[0] : undefined;
   };
   const pools: Pool[] = [];
+  /** Pool slots held by BYE ("pool|slot"): games against them are byes. */
+  const byeSlots = new Set<string>();
+  const byeSeeds = new Set(seedRows.filter((s) => isBye(s.team)).map((s) => s.seed));
   for (const pm of mapping.pools) {
     const rows = readPoolTable(wb, pm);
     const name = poolName(pm.name);
     if (pools.some((p) => p.name === name)) continue;
     const slots = rows.map((r, i) => ({ slot: r.slot ?? `${name}${i + 1}`, seed: r.seed, team: tableTeam(r.team) }));
+    rows.forEach((r, i) => isBye(r.team) && byeSlots.add(`${name}|${r.slot ?? `${name}${i + 1}`}`));
     const sheetTable: SheetTableRow[] = rows
       .filter((r) => tableTeam(r.team))
       .map((r) => ({ team: tableTeam(r.team)!, p: r.p, w: r.w, d: r.d, l: r.l, pf: r.pf, pa: r.pa, diff: r.diff, pts: r.pts, rank: r.rank, note: r.note, newSeed: r.newSeed }));
@@ -418,6 +422,9 @@ export function extract(wb: Workbook, mapping: Mapping, opts: ExtractOptions): T
     const carried = ukuCarried(wb, p.name);
     if (carried.length) p.carried = carried;
   }
+  // Byes: games in a pool against a slot held by BYE (by name in the table, or by a BYE seed).
+  for (const p of pools) for (const sl of p.slots) if (sl.seed !== undefined && byeSeeds.has(sl.seed)) byeSlots.add(`${p.name}|${sl.slot}`);
+  for (const g of games) if (g.pool && g.slots.some((sl) => sl && byeSlots.has(`${g.pool}|${sl}`))) g.isBye = true;
   // Fill pool slot teams from seeds (R1) for first-stage pools with no names in the table.
   const teamOfSeed = new Map<number, string>();
   for (const s of seedRowsC) if (!teamOfSeed.has(s.seed)) teamOfSeed.set(s.seed, s.team);
