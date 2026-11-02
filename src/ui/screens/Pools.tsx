@@ -47,7 +47,7 @@ export function PoolCard({ st, full }: { st: PoolStanding; full?: boolean }) {
   const left = st.total - st.played;
   const games = c.view.games.filter((v) => v.g.pool === p.name && v.g.division === p.division);
   const carried = st.results.filter((r) => r.carried);
-  const tiedTeams = new Set(st.rows.filter((r) => r.tiedWith.length).map((r) => r.team));
+  const tiedTeams = new Set(st.rows.filter((r) => r.tiedWith.length && r.p > 0).map((r) => r.team));
   const twoTeam = st.rows.length === 2;
   return (
     <section className="card pool-card" aria-labelledby={`pool-${p.name}`}>
@@ -126,7 +126,7 @@ export function PoolCard({ st, full }: { st: PoolStanding; full?: boolean }) {
           })}
         </div>
       )}
-      {st.tied.map((g) => (
+      {st.tied.filter((g) => st.rows.some((r) => g.teams.includes(r.team) && r.p > 0)).map((g) => (
         <div key={g.teams.join('|')} className="ex-row tied">
           <span className="ex-badge d">=</span>
           <span>

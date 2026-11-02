@@ -97,6 +97,10 @@ export function Info(_: ScreenProps) {
           App settings <span style={{ flex: 1 }} />
           <IChevronRight size={18} />
         </a>
+        <button className="link-row as-btn" onClick={() => c.setReplayAt(Math.min(...c.t.games.filter((g) => !g.unscheduled).map((g) => g.start)))}>
+          Replay the tournament <span style={{ flex: 1 }} />
+          <IChevronRight size={18} />
+        </button>
         <a className="link-row" href={tHref(c.id, 'diagnostics')}>
           Diagnostics <span style={{ flex: 1 }} />
           <IChevronRight size={18} />

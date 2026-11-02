@@ -9,6 +9,7 @@ import { Team } from './Team';
 import { Pools } from './Pools';
 import { Brackets, StandingsScreen } from './Brackets';
 import { Info } from './Info';
+import { WhatIf } from './WhatIf';
 
 export interface ScreenProps {
   arg?: string;
@@ -25,5 +26,5 @@ export const screens: {
   Home,
   Add,
   AppSettings: Placeholder,
-  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen },
+  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen, whatif: WhatIf },
 };

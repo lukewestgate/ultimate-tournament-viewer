@@ -344,3 +344,23 @@ table.sgrid tr.now th { color: var(--live); }
 .info-lines p { margin: 8px 0 0; font-size: 14px; color: var(--ink2); white-space: pre-wrap; }
 a.chip { text-decoration: none; display: inline-flex; align-items: center; color: var(--ink2); }
 a.chip.on { color: var(--surface); }
+
+/* ---------- what-if & replay ---------- */
+.wi { border: 1.5px dashed var(--whatif); background: var(--whatif-soft); box-shadow: none; }
+.wi-team { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); text-align: left; width: 100%; }
+.wi-team.on { border: 1.5px dashed var(--whatif); background: var(--surface); }
+.steppers { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stepper { display: flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.stepper input { width: 46px; text-align: center; border: 0; background: transparent; font-size: 26px; font-weight: 700; }
+.stepper .ib { font-size: 22px; font-weight: 700; }
+td.up { color: var(--win); }
+td.down { color: var(--live); }
+.replay-wrap { display: flex; flex-direction: column; gap: 6px; }
+.replay-wrap.sticky { position: sticky; top: calc(62px + env(safe-area-inset-top)); z-index: 17; }
+.replay-time { border: 0 !important; background: transparent !important; color: inherit; font: 600 14px Inter, sans-serif !important; padding: 0 !important; }
+.scrubber { width: 100%; accent-color: var(--replay); min-height: 32px; }
+.scrub-days { display: flex; justify-content: space-between; }
+.link-row.as-btn { width: 100%; border: 0; background: transparent; font: inherit; font-weight: 600; text-align: left; }
+.in-whatif .main { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--whatif) 30%, transparent); }
+.app-shell { overflow-x: clip; }
+.main > * { min-width: 0; }
