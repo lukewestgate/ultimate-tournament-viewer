@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../../store/app';
 import { idbDel, idbUsage } from '../../store/db';
-import { DEFAULT_MODEL, testKey } from '../../mapping/ai';
+import { DEFAULT_MODEL, testKey, type KeyCheck } from '../../mapping/ai';
+import { ICheck } from '../icons';
 import { Seg } from '../parts';
 import { SubPage } from '../Shell';
 import type { Theme } from '../../store/settings';
@@ -16,8 +17,15 @@ export function AppSettings() {
   const [key, setKey] = useState(s.app.aiKey ?? '');
   const [editKey, setEditKey] = useState(!s.app.aiKey);
   const [model, setModel] = useState(s.app.aiModel ?? '');
-  const [test, setTest] = useState<{ ok: boolean; message: string } | 'testing' | undefined>();
+  const [test, setTest] = useState<KeyCheck | 'testing' | undefined>();
+  const [testMs, setTestMs] = useState(0);
   const [usage, setUsage] = useState<{ key: string; bytes: number }[]>([]);
+  useEffect(() => {
+    if (test !== 'testing') return;
+    const t0 = Date.now();
+    const id = setInterval(() => setTestMs(Date.now() - t0), 250);
+    return () => clearInterval(id);
+  }, [test]);
   useEffect(() => {
     void idbUsage().then(setUsage).catch(() => setUsage([]));
   }, []);
@@ -67,13 +75,15 @@ export function AppSettings() {
             disabled={!key.trim() || test === 'testing'}
             onClick={async () => {
               if (key.trim() !== s.app.aiKey) s.setApp({ aiKey: key.trim() });
+              if (model.trim() !== (s.app.aiModel ?? '')) s.setApp({ aiModel: model.trim() || undefined });
+              setTestMs(0);
               setTest('testing');
               setTest(await testKey({ key: key.trim(), model: model.trim() || undefined }));
             }}
           >
-            {test === 'testing' ? 'Testing…' : 'Test key'}
+            {test === 'testing' ? `Testing… ${Math.floor(testMs / 1000)} s` : 'Test key'}
           </button>
-          {test && test !== 'testing' && <span className={test.ok ? 'ok-text' : 'err small'}>{test.ok ? '✓ Key works' : test.message}</span>}
+          {test && test !== 'testing' && <span className={test.ok ? 'ok-text' : 'err small'}>{test.ok ? 'Everything works' : 'Not working yet'}</span>}
           <span style={{ flex: 1 }} />
           {s.app.aiKey && (
             <button
@@ -89,6 +99,18 @@ export function AppSettings() {
             </button>
           )}
         </div>
+        {test && test !== 'testing' && (
+          <ul className="key-checks" aria-live="polite">
+            {test.lines.map((l) => (
+              <li key={l.text} className={l.ok ? 'ok' : 'bad'}>
+                <span className="kc-mark" aria-hidden="true">
+                  {l.ok ? <ICheck size={13} /> : '!'}
+                </span>
+                {l.text}
+              </li>
+            ))}
+          </ul>
+        )}
         <span className="small muted">
           Optional. Your key stays on this device and is only sent to{' '}
           <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">

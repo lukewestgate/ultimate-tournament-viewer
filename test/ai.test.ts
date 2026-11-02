@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildMappingPrompt, improveMapping, sampleWorkbook, stats } from '../src/mapping/ai';
+import { buildMappingPrompt, callModel, improveMapping, sampleWorkbook, stats, type AiProgress } from '../src/mapping/ai';
 import { detectMapping } from '../src/mapping/detect';
 import { extract } from '../src/extract/extract';
 import { emptyMapping } from '../src/mapping/types';
@@ -54,6 +54,86 @@ describe('AI mapper', () => {
   it('reports a rejected key', async () => {
     const f = vi.fn(async () => new Response('nope', { status: 401 }));
     const p = await improveMapping({ wb, current: good, id: 'x', title: 'x', call: { key: 'bad', fetcher: f as unknown as typeof fetch } });
-    expect(p.error).toMatch(/key was rejected/);
+    expect(p.error).toMatch(/rejected the key/);
+    expect(p.errorKind).toBe('key');
+  });
+
+  it('never throws: a broken workbook comes back as an error, not a spinner', async () => {
+    const { fetcher } = fakeModel(['{}']);
+    const p = await improveMapping({ wb: { tabs: null } as never, current: good, id: 'x', title: 'x', call: { key: 'k', fetcher } });
+    expect(p.error).toBeTruthy();
+  });
+});
+
+/** A streamed reply, as OpenRouter sends it: keep-alive comments, reasoning, then content, usage and [DONE]. */
+function sse(parts: (string | object)[], delay = 0): typeof fetch {
+  return (async (_url: string, init: RequestInit) => {
+    const enc = new TextEncoder();
+    const body = new ReadableStream<Uint8Array>({
+      async start(c) {
+        for (const p of parts) {
+          if (delay) await new Promise((r) => setTimeout(r, delay));
+          if (init.signal?.aborted) return c.error(new DOMException('aborted', 'AbortError'));
+          c.enqueue(enc.encode(typeof p === 'string' ? `${p}
+
+` : `data: ${JSON.stringify(p)}
+
+`));
+        }
+        c.close();
+      },
+    });
+    return new Response(body, { status: 200, headers: { 'content-type': 'text/event-stream' } });
+  }) as unknown as typeof fetch;
+}
+
+/** A request that never answers until it's aborted. */
+const hang = (async (_url: string, init: RequestInit) =>
+  new Promise((_, reject) => init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))) as unknown as typeof fetch;
+
+describe('model calls', () => {
+  const msgs = [{ role: 'user' as const, content: 'hi' }];
+
+  it('streams reasoning and answer, reporting progress', async () => {
+    const seen: { thinking: number; writing: number }[] = [];
+    const fetcher = sse([': OPENROUTER PROCESSING', { choices: [{ delta: { reasoning: 'hmm, let me see' } }] }, { choices: [{ delta: { content: '{"ok":' } }] }, { choices: [{ delta: { content: 'true}' }, finish_reason: 'stop' }], usage: { prompt_tokens: 10, completion_tokens: 5 } }, 'data: [DONE]']);
+    const r = await callModel({ key: 'k', fetcher, onStream: (p) => seen.push(p) }, msgs);
+    expect(r.text).toBe('{"ok":true}');
+    expect(r.usage.promptTokens).toBe(10);
+    expect(seen[0]).toEqual({ thinking: 15, writing: 0 });
+    expect(seen.at(-1)!.writing).toBe(11);
+  });
+
+  it('turns HTTP and stream errors into kinds', async () => {
+    const status = (n: number, body = '') => (async () => new Response(body, { status: n })) as unknown as typeof fetch;
+    await expect(callModel({ key: 'k', fetcher: status(402, '{"error":{"message":"Insufficient credits"}}') }, msgs)).rejects.toMatchObject({ kind: 'credit', message: /Insufficient credits/ });
+    await expect(callModel({ key: 'k', fetcher: status(400, '{"error":{"message":"foo/bar is not a valid model ID"}}') }, msgs)).rejects.toMatchObject({ kind: 'model' });
+    await expect(callModel({ key: 'k', fetcher: status(503) }, msgs)).rejects.toMatchObject({ kind: 'server' });
+    await expect(callModel({ key: 'k', fetcher: sse([{ error: { message: 'Provider returned error', code: 502 }, choices: [{ delta: { content: '' }, finish_reason: 'error' }] }]) }, msgs)).rejects.toMatchObject({ kind: 'server' });
+    await expect(callModel({ key: 'k', fetcher: (async () => Promise.reject(new TypeError('Failed to fetch'))) as unknown as typeof fetch }, msgs)).rejects.toMatchObject({ kind: 'network' });
+  });
+
+  it('explains an answer used up by thinking', async () => {
+    const fetcher = sse([{ choices: [{ delta: { reasoning: 'x'.repeat(50) }, finish_reason: 'length' }] }]);
+    await expect(callModel({ key: 'k', fetcher }, msgs)).rejects.toMatchObject({ kind: 'reply', message: /never wrote an answer/ });
+  });
+
+  it('gives up when nothing comes back, and when the stream stalls', async () => {
+    await expect(callModel({ key: 'k', fetcher: hang, timeouts: { first: 30, total: 1000 } }, msgs)).rejects.toMatchObject({ kind: 'timeout', message: /didn't answer/ });
+    const deaf = (async () => new Promise(() => undefined)) as unknown as typeof fetch; // ignores the abort signal
+    await expect(callModel({ key: 'k', fetcher: deaf, timeouts: { first: 30, total: 1000 } }, msgs)).rejects.toMatchObject({ kind: 'timeout' });
+    const stall = sse([{ choices: [{ delta: { reasoning: 'a' } }] }, { choices: [{ delta: { content: '{}' } }] }], 80);
+    await expect(callModel({ key: 'k', fetcher: stall, timeouts: { first: 1000, idle: 40, total: 1000 } }, msgs)).rejects.toMatchObject({ kind: 'timeout' });
+  });
+
+  it('can be cancelled, and the mapper reports phases', async () => {
+    const ctl = new AbortController();
+    const phases: AiProgress['phase'][] = [];
+    const wb = loadFixture('list-round-robin');
+    const run = improveMapping({ wb, current: detectMapping(wb).mapping, id: 'x', title: 'x', call: { key: 'k', fetcher: hang, signal: ctl.signal }, onProgress: (p) => phases.push(p.phase) });
+    setTimeout(() => ctl.abort(), 20);
+    const p = await run;
+    expect(p.errorKind).toBe('cancelled');
+    expect(phases).toEqual(['reading', 'waiting']);
   });
 });

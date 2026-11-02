@@ -9,7 +9,9 @@ import { editFormat, editMapping, shareLink, copyOrShare } from '../mappingEdit'
 import { mergeSuggestions } from '../../extract/quality';
 import { pointsDiffPreset, ukuPreset, TIEBREAK_LABEL, ALL_TIEBREAKS, UNCOMPUTABLE } from '../../engine/rulesPresets';
 import { divKey, type EngineLevel, type Rules } from '../../model/types';
-import { improveMapping, aiRules, aiFormat, type AiProposal } from '../../mapping/ai';
+import { improveMapping, aiRules, aiFormat } from '../../mapping/ai';
+import { AiTask, UsageLine } from '../AiTask';
+import { describeSource } from './FormatEditor';
 import { teamKey } from '../../store/settings';
 import { IChevronRight, IChevronDown } from '../icons';
 import { dateLabel } from '../fmt';
@@ -356,7 +358,6 @@ function RulesPage() {
     set({ ...r, tiebreaks: tbs, preset: 'custom' });
   };
   const unused = ALL_TIEBREAKS.filter((x) => !r.tiebreaks.includes(x));
-  const [busy, setBusy] = useState(false);
   return (
     <SubPage title="Points & tie-breaks" sub={c.t.title} back={tHref(c.id, 'settings')}>
       <p className="set-note">
@@ -429,20 +430,12 @@ function RulesPage() {
         </button>
         <button
           className="btn violet-text"
-          disabled={busy}
-          onClick={async () => {
-            const key = store.app.aiKey;
-            if (!key) return overlay.toast('Add an OpenRouter key in App settings first.');
-            setBusy(true);
-            const res = await aiRules({ key, model: store.app.aiModel }, c.t.info.flatMap((s) => [s.title, ...s.lines]).join('\n'));
-            setBusy(false);
-            if (res.rules) {
-              editMapping(c, (x) => ({ ...x, rules: res.rules }));
-              overlay.toast('Rules read by AI.');
-            } else overlay.toast(res.error ?? 'AI couldn’t read the rules.');
+          onClick={() => {
+            if (!store.app.aiKey) return overlay.toast('Add an OpenRouter key in App settings first.');
+            overlay.openSheet(<AiRulesRun />, { title: 'Read the rules with AI' });
           }}
         >
-          {busy ? 'Asking AI…' : 'Ask AI'}
+          Ask AI
         </button>
       </div>
     </SubPage>
@@ -469,112 +462,238 @@ function AiButton() {
 export function AiRun() {
   const c = useT();
   const overlay = useOverlay();
-  const [state, setState] = useState<'idle' | 'running' | 'done'>('idle');
-  const [p, setP] = useState<AiProposal | undefined>();
-  const run = async () => {
-    setState('running');
-    const wb = c.rt.workbook!;
-    const res = await improveMapping({ wb, current: c.p.mapping, id: c.id, title: c.t.title, call: { key: store.app.aiKey!, model: store.app.aiModel } });
-    setP(res);
-    setState('done');
-  };
-  if (state === 'idle')
-    return (
-      <div className="stack">
+  return (
+    <AiTask
+      intro={
         <p className="small muted" style={{ margin: 0 }}>
           The first rows of each visible tab and the current reading are sent to OpenRouter with your key. Only a description of where things are comes back; you choose whether to use it. Usually well under a cent.
         </p>
-        <button className="btn violet" onClick={run}>
-          Ask AI
-        </button>
-      </div>
-    );
-  if (state === 'running')
-    return (
-      <div className="center-page" style={{ minHeight: 160 }}>
-        <div className="spinner" />
-        <span className="muted">Asking AI…</span>
-      </div>
-    );
-  if (!p) return null;
-  if (p.error && !p.mapping) return <p className="err">{p.error}</p>;
-  const row = (label: string, a: string | number, b: string | number) => (
-    <tr>
-      <th scope="row">{label}</th>
-      <td>{a}</td>
-      <td>{b}</td>
-    </tr>
-  );
-  return (
-    <div className="stack">
-      <span className={`tag ${p.better ? 'win' : 'warn'}`} style={{ alignSelf: 'flex-start' }}>
-        {p.better ? 'Better than the current reading' : 'Not better than the current reading'}
-      </span>
-      <table className="cmp">
-        <thead>
-          <tr>
-            <th />
-            <th>Now</th>
-            <th>With AI</th>
+      }
+      run={({ call, onProgress }) => {
+        const wb = c.rt.workbook;
+        if (!wb) return Promise.resolve({ before: { games: 0, withTeams: 0, teams: 0, days: 0, divisions: 0, pools: 0, problems: [], aliases: 0 }, better: false, usage: { promptTokens: 0, completionTokens: 0, cost: 0 }, attempts: 0, error: 'The sheet isn’t loaded yet. Wait for it to open, then try again.', errorKind: 'reply' as const });
+        return improveMapping({ wb, current: c.p.mapping, id: c.id, title: c.t.title, call, onProgress });
+      }}
+      done={(p, { ms }) => {
+        const row = (label: string, a: string | number, b: string | number, good?: boolean) => (
+          <tr className={good === undefined ? '' : good ? 'up' : 'down'}>
+            <th scope="row">{label}</th>
+            <td>{a}</td>
+            <td>{b}</td>
           </tr>
-        </thead>
-        <tbody>
-          {row('Games', p.before.games, p.after?.games ?? '–')}
-          {row('With both teams', p.before.withTeams, p.after?.withTeams ?? '–')}
-          {row('Teams', p.before.teams, p.after?.teams ?? '–')}
-          {row('Merged names', p.before.aliases, p.after?.aliases ?? '–')}
-          {row('Divisions', p.before.divisions, p.after?.divisions ?? '–')}
-          {row('Problems', p.before.problems.length, p.after?.problems.length ?? '–')}
-        </tbody>
-      </table>
-      {p.mapping?.notes?.length ? <ul className="small">{p.mapping.notes.map((n) => <li key={n}>{n}</li>)}</ul> : null}
-      <span className="small muted">
-        {p.usage.promptTokens + p.usage.completionTokens} tokens · about ${p.usage.cost.toFixed(4)}
-      </span>
-      <div className="two-btns">
-        <button className="btn" onClick={() => overlay.closeSheet()}>
-          Discard
-        </button>
-        <button
-          className="btn primary"
-          disabled={!p.mapping}
-          onClick={() => {
-            store.runtime(c.id).setMapping(p.mapping);
-            overlay.closeSheet();
-            overlay.toast('Using the AI’s reading.');
-          }}
-        >
-          Use
-        </button>
-      </div>
-    </div>
+        );
+        const a = p.after;
+        const same = a && a.games === p.before.games && a.withTeams === p.before.withTeams && a.teams === p.before.teams && a.problems.length === p.before.problems.length;
+        return (
+          <div className="stack">
+            <span className={`tag ${same ? 'quiet' : p.better ? 'win' : 'warn'}`} style={{ alignSelf: 'flex-start' }}>
+              {same ? 'Same result as the current reading' : p.better ? 'Better than the current reading' : 'Not better than the current reading'}
+            </span>
+            <table className="cmp">
+              <thead>
+                <tr>
+                  <th />
+                  <th>Now</th>
+                  <th>With AI</th>
+                </tr>
+              </thead>
+              <tbody>
+                {row('Games', p.before.games, a?.games ?? '–', a && a.games !== p.before.games ? a.games > p.before.games : undefined)}
+                {row('With both teams', p.before.withTeams, a?.withTeams ?? '–', a && a.withTeams !== p.before.withTeams ? a.withTeams > p.before.withTeams : undefined)}
+                {row('Teams', p.before.teams, a?.teams ?? '–')}
+                {row('Merged names', p.before.aliases, a?.aliases ?? '–')}
+                {row('Divisions', p.before.divisions, a?.divisions ?? '–')}
+                {row('Problems', p.before.problems.length, a?.problems.length ?? '–', a && a.problems.length !== p.before.problems.length ? a.problems.length < p.before.problems.length : undefined)}
+              </tbody>
+            </table>
+            {a?.problems.length ? (
+              <div className="ai-notes">
+                <b className="small">Still wrong with the AI’s reading</b>
+                <ul className="small">
+                  {a.problems.slice(0, 4).map((x) => (
+                    <li key={x}>{x}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {p.mapping?.notes?.length ? (
+              <div className="ai-notes">
+                <b className="small">AI’s notes</b>
+                <ul className="small">
+                  {p.mapping.notes.map((x) => (
+                    <li key={x}>{x}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            <UsageLine usage={p.usage} ms={ms} />
+            <div className="two-btns">
+              <button className="btn" onClick={() => overlay.closeSheet()}>
+                Discard
+              </button>
+              <button
+                className="btn primary"
+                disabled={!p.mapping}
+                onClick={() => {
+                  store.runtime(c.id).setMapping(p.mapping);
+                  overlay.closeSheet();
+                  overlay.toast('Using the AI’s reading.');
+                }}
+              >
+                Use
+              </button>
+            </div>
+          </div>
+        );
+      }}
+    />
+  );
+}
+
+/** "Ask AI to read the rules": progress, then the points and tie-breaks it found, to use or discard. */
+function AiRulesRun() {
+  const c = useT();
+  const overlay = useOverlay();
+  const text = c.t.info.flatMap((x) => [x.title, ...x.lines]).join('\n');
+  return (
+    <AiTask
+      checking={false}
+      run={({ call, onProgress }) => aiRules(call, text, onProgress)}
+      done={(res, { ms }) => {
+        const r = res.rules!;
+        return (
+          <div className="stack">
+            <span className="small muted">AI read these rules from the sheet’s info text:</span>
+            <dl className="kv ai-rules">
+              <dt>Points</dt>
+              <dd className="d">
+                Win {r.points.win} · Draw {r.points.draw} · Loss {r.points.loss}
+              </dd>
+              <dt>Draws</dt>
+              <dd>{r.drawsAllowed.pool ? (r.drawsAllowed.placement ? 'Allowed' : 'Allowed in pools') : 'Not allowed'}</dd>
+              <dt>Tie-breaks</dt>
+              <dd>
+                {r.tiebreaks.length ? (
+                  <ol className="ai-tbs">
+                    {r.tiebreaks.map((tb) => (
+                      <li key={tb}>{TIEBREAK_LABEL[tb]}</li>
+                    ))}
+                  </ol>
+                ) : (
+                  'None found'
+                )}
+              </dd>
+            </dl>
+            <UsageLine usage={res.usage} ms={ms} />
+            <div className="two-btns">
+              <button className="btn" onClick={() => overlay.closeSheet()}>
+                Discard
+              </button>
+              <button
+                className="btn primary"
+                onClick={() => {
+                  editMapping(c, (x) => ({ ...x, rules: r }));
+                  overlay.closeSheet();
+                  overlay.toast('Using the rules AI read.');
+                }}
+              >
+                Use
+              </button>
+            </div>
+          </div>
+        );
+      }}
+    />
+  );
+}
+
+/** "Ask AI to work out the format": progress, then the slots it filled, to use or discard. */
+function AiFormatRun() {
+  const c = useT();
+  const overlay = useOverlay();
+  const gameName = (id: string) => {
+    const g = c.t.games.find((x) => x.id === id);
+    return g ? (g.code?.replace(/[[\]]/g, '') ?? `${g.day.slice(0, 3)} ${g.time} P${g.pitch.label}`) : id;
+  };
+  const slotName = (k: string) => {
+    const [kind, id, side] = k.split(':');
+    return kind === 'game' ? `${gameName(id)} · ${side === '1' ? 'first' : 'second'} team` : `Pool ${id} · slot ${side}`;
+  };
+  return (
+    <AiTask
+      checking={false}
+      run={({ call, onProgress }) => {
+        const formulas: string[] = [];
+        for (const tab of c.rt.workbook?.tabs ?? []) for (const [k, f] of Object.entries(tab.formulas ?? {})) if (/rank|vlookup|index|match/i.test(f)) formulas.push(`${tab.name}!${k}: =${f}`.slice(0, 200));
+        const formatText = c.t.info.map((x) => [x.title, ...x.lines].join('\n')).join('\n');
+        return aiFormat(call, c.t, c.p.format, formulas, formatText, onProgress);
+      }}
+      done={(res, { ms }) => {
+        if (!res.asked)
+          return (
+            <div className="stack">
+              <p style={{ margin: 0 }}>Nothing to fill: every future game already has a source for both teams.</p>
+              <button className="btn" onClick={() => overlay.closeSheet()}>
+                Close
+              </button>
+            </div>
+          );
+        const sourceOf = (k: string) => {
+          for (const d of Object.values(res.format?.divisions ?? {})) if (d.sources[k]) return d.sources[k].source;
+          return undefined;
+        };
+        return (
+          <div className="stack">
+            <span className={`tag ${res.filled ? 'win' : 'warn'}`} style={{ alignSelf: 'flex-start' }}>
+              {res.filled ? `Filled ${res.filled} of ${res.asked} unknown slots` : `Couldn’t fill any of the ${res.asked} unknown slots`}
+            </span>
+            {res.filled > 0 && (
+              <ul className="ai-slots small">
+                {res.keys.slice(0, 8).map((k) => (
+                  <li key={k}>
+                    <span className="muted">{slotName(k)}</span>
+                    <b>{describeSource(sourceOf(k), gameName)}</b>
+                  </li>
+                ))}
+                {res.keys.length > 8 && <li className="muted">and {res.keys.length - 8} more</li>}
+              </ul>
+            )}
+            <span className="small muted">These are marked “from AI” and unverified until the sheet confirms them. You can change any of them in the format editor.</span>
+            <UsageLine usage={res.usage} ms={ms} />
+            <div className="two-btns">
+              <button className="btn" onClick={() => overlay.closeSheet()}>
+                {res.filled ? 'Discard' : 'Close'}
+              </button>
+              <button
+                className="btn primary"
+                disabled={!res.filled}
+                onClick={() => {
+                  editFormat(c, () => res.format);
+                  overlay.closeSheet();
+                  overlay.toast(`Using ${res.filled} slots from AI.`);
+                }}
+              >
+                Use
+              </button>
+            </div>
+          </div>
+        );
+      }}
+    />
   );
 }
 
 function AiFormatButton() {
-  const c = useT();
   const overlay = useOverlay();
-  const [busy, setBusy] = useState(false);
   return (
     <button
       className="btn violet-text"
-      disabled={busy}
-      onClick={async () => {
+      onClick={() => {
         if (!store.app.aiKey) return overlay.toast('Add an OpenRouter key in App settings first.');
-        setBusy(true);
-        const wb = c.rt.workbook;
-        const formulas: string[] = [];
-        for (const tab of wb?.tabs ?? []) for (const [k, f] of Object.entries(tab.formulas ?? {})) if (/rank|vlookup|index|match/i.test(f)) formulas.push(`${tab.name}!${k}: =${f}`.slice(0, 200));
-        const formatText = c.t.info.map((s) => [s.title, ...s.lines].join('\n')).join('\n');
-        const res = await aiFormat({ key: store.app.aiKey, model: store.app.aiModel }, c.t, c.p.format, formulas, formatText);
-        setBusy(false);
-        if (res.format && res.filled) {
-          editFormat(c, () => res.format);
-          overlay.toast(`AI filled ${res.filled} unknown slots. Check them in the format editor.`);
-        } else overlay.toast(res.error ?? 'Nothing left for AI to fill.');
+        overlay.openSheet(<AiFormatRun />, { title: 'Work out the format with AI' });
       }}
     >
-      {busy ? 'Asking AI…' : 'Ask AI'}
+      Ask AI
     </button>
   );
 }
