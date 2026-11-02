@@ -6,6 +6,7 @@ import './ui/styles/screens.css';
 import './ui/styles/shell.css';
 import './ui/styles/rows.css';
 import './ui/styles/now.css';
+import './ui/styles/schedule.css';
 import { App } from './ui/App';
 
 createRoot(document.getElementById('root')!).render(
