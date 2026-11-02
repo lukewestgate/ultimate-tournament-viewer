@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useT } from './ctx';
 import { ago, initials, plural } from './fmt';
-import { IBrackets, IChevronDown, IInfo, INow, IOffline, IPools, IRefresh, ISchedule, ISearch, ITeams, IWarn, IWhatIf, IClose, IStar } from './icons';
+import { IBrackets, IChevronDown, IChevronLeft, IInfo, INow, IOffline, IPools, IRefresh, ISchedule, ISearch, ITeams, IWarn, IWhatIf, IClose, IStar } from './icons';
 import { navigate, setParams, tHref, type TournamentTab } from './router';
 import { useOverlay } from './overlay';
 import { store } from '../store/app';
@@ -12,8 +12,9 @@ import { FETCH_ERROR_TEXT } from '../sheets/fetch';
 import { Switcher } from './Switcher';
 import { openSearch } from './screens/Search';
 import { encodeScenario } from '../engine/scenario';
-import { ReplayBar } from './screens/Replay';
+import { ReplayBar, ReplayDock } from './screens/Replay';
 import { divKey } from '../model/types';
+import { DivisionPicker } from './DivisionPicker';
 
 function useOnline() {
   const [on, setOn] = useState(() => navigator.onLine);
@@ -30,46 +31,76 @@ function useOnline() {
   return on;
 }
 
+/** App mark: a pitch with a disc. */
+export function Logo({ size = 36 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden="true" className="logo">
+      <rect width="512" height="512" rx="112" fill="#0E1A3A" />
+      <rect x="72" y="150" width="368" height="212" rx="10" fill="none" stroke="#FFFFFF" strokeOpacity=".5" strokeWidth="18" />
+      <ellipse cx="282" cy="232" rx="88" ry="38" fill="#FF6A3D" />
+    </svg>
+  );
+}
+
+/** Freshness: "Updated 2m ago" (green dot), greyed after 10 min, offline. */
+export function Freshness() {
+  const c = useT();
+  const online = useOnline();
+  const stale = !c.rt.lastSuccess || c.now - c.rt.lastSuccess > 10 * 60000;
+  if (!online)
+    return (
+      <span className="fresh off">
+        <IOffline size={12} />
+        Offline{c.rt.lastSuccess ? ` · ${new Date(c.rt.lastSuccess).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : ''}
+      </span>
+    );
+  return (
+    <span className={`fresh${stale ? ' stale' : ''}`}>
+      <span className="fresh-dot" />
+      {c.rt.fetching && !c.rt.lastSuccess ? 'Loading…' : ago(c.rt.lastSuccess, c.now)}
+    </span>
+  );
+}
+
 export function Header() {
   const c = useT();
   const overlay = useOverlay();
-  const now = c.now;
-  const stale = !c.rt.lastSuccess || now - c.rt.lastSuccess > 10 * 60000;
-  const onToday = store.saved().filter((s) => isOnToday(s.summary, now)).length;
+  const onToday = store.saved().filter((s) => isOnToday(s.summary, c.now)).length;
   const primary = c.primary ? parseTeamKey(c.primary) : undefined;
   const tabs = useTabs();
   return (
     <header className="hdr">
       <div className="hdr-row">
+        <a className="hdr-logo desk-only" href="#/" aria-label="All tournaments">
+          <Logo />
+        </a>
         <button className="hdr-title" onClick={() => overlay.openSheet(<Switcher />, { title: 'Tournaments' })} aria-label={`${c.t.title}. Switch tournament`}>
           <span className="hdr-name">
             <b>{c.t.title}</b>
-            <IChevronDown size={14} />
+            <IChevronDown size={14} strokeWidth={2.6} />
           </span>
           <span className="hdr-sub">
-            <span className={`fresh${stale ? ' stale' : ''}`}>
-              <span className="dot" style={{ width: 6, height: 6, background: stale ? 'var(--ink3)' : 'var(--win)' }} />
-              {c.rt.fetching && !c.rt.lastSuccess ? 'Loading…' : ago(c.rt.lastSuccess, now)}
-            </span>
+            <Freshness />
             {onToday >= 2 && (
               <span className="ontoday">
-                <i className="li" style={{ width: 6, height: 6 }} />
+                <i className="li" />
                 {onToday} on today
               </span>
             )}
           </span>
         </button>
-        <nav className="top-tabs" aria-label="Main">
+        <nav className="top-tabs desk-only" aria-label="Main">
           {tabs.map((t) => (
-            <a key={t.tab} href={tHref(c.id, t.tab)} className={t.active ? 'on' : ''} aria-current={t.active ? 'page' : undefined}>
+            <a key={t.tab} href={tHref(c.id, t.tab)} className={`nav${t.active ? ' on' : ''}`} aria-current={t.active ? 'page' : undefined}>
               {t.label}
             </a>
           ))}
         </nav>
-        <button className="search-box" onClick={() => openSearch(overlay, c)}>
+        <span className="desk-only" style={{ flex: 1 }} />
+        <button className="search-box desk-only" onClick={() => openSearch(overlay, c)}>
           <ISearch size={18} />
           <span>Search teams, games, pitches</span>
-          <kbd>Ctrl K</kbd>
+          <kbd className="d">Ctrl K</kbd>
         </button>
         <a className="ib phone-only" href={tHref(c.id, 'info')} aria-label="Info: rules, links, pitch map, settings">
           <IInfo />
@@ -78,7 +109,7 @@ export function Header() {
           <ISearch />
         </button>
         {primary ? (
-          <a className="ib" href={tHref(c.id, 'team', c.primary)} aria-label={`Primary team: ${primary.name}`}>
+          <a className="ib avatar-btn" href={tHref(c.id, 'team', c.primary)} aria-label={`Primary team: ${primary.name}`}>
             <span className="avatar d" style={{ borderColor: c.colorOf(primary.name, primary.division) }}>
               {initials(primary.name)}
             </span>
@@ -101,47 +132,19 @@ export function DivisionSwitcher() {
   const followedDivs = new Set(c.followed.map((k) => parseTeamKey(k).division));
   const chip = (name: string | undefined, label: string) => (
     <button key={label} className={`chip${c.division === name ? ' on' : ''}`} onClick={() => c.setDivision(name)} aria-pressed={c.division === name}>
-      {name && followedDivs.has(name) && <span aria-label="followed">★ </span>}
       {label}
+      {name && followedDivs.has(name) && <span aria-label="followed team"> ★</span>}
     </button>
   );
-  const picker = () => {
-    const groups = new Map<string, string[]>();
-    for (const d of c.t.divisions) groups.set(d.group ?? d.name, [...(groups.get(d.group ?? d.name) ?? []), d.name]);
-    overlay.openSheet(
-      <div className="picker">
-        <button className={`pick-row${!c.division ? ' on' : ''}`} onClick={() => (c.setDivision(undefined), overlay.closeSheet())}>
-          All
-        </button>
-        {[...groups.entries()].map(([g, ds]) => (
-          <div key={g}>
-            {ds.length > 1 && <div className="lbl" style={{ padding: '10px 4px 4px' }}>{g}</div>}
-            {ds.map((d) => (
-              <button key={d} className={`pick-row${c.division === d ? ' on' : ''}`} onClick={() => (c.setDivision(d), overlay.closeSheet())}>
-                {followedDivs.has(d) && '★ '}
-                {d}
-                <span className="muted" style={{ marginLeft: 'auto' }}>
-                  {plural(c.t.teams.filter((x) => x.division === d).length, 'team')}
-                </span>
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>,
-      { title: 'Competition' },
-    );
-  };
   return (
     <div className="divbar" role="toolbar" aria-label="Division">
       <div className="chips">
         {chip(undefined, 'All')}
         {c.t.divisions.map((d) => chip(d.name, d.name))}
       </div>
-      {c.t.divisions.length >= 4 && (
-        <button className="chip more" onClick={picker} aria-label="All competitions">
-          ▾
-        </button>
-      )}
+      <button className="chip more" onClick={() => overlay.openSheet(<DivisionPicker />, { title: 'Show' })} aria-label="All competitions">
+        <IChevronDown size={14} strokeWidth={2.6} />
+      </button>
     </div>
   );
 }
@@ -159,7 +162,10 @@ export function useTabs(): { tab: TournamentTab; label: string; icon: ReactNode;
     { tab: 'brackets' as const, label: basic ? 'Finals & placings' : 'Brackets', icon: <IBrackets /> },
     { tab: 'info' as const, label: 'Info', icon: <IInfo /> },
   ];
-  return out.map((t) => ({ ...t, active: tab === t.tab || (tab === 'team' && t.tab === 'teams') || (tab === 'whatif' && t.tab === 'pools') }));
+  return out.map((t) => ({
+    ...t,
+    active: tab === t.tab || (tab === 'team' && t.tab === 'teams') || (tab === 'whatif' && t.tab === 'pools') || (tab === 'standings' && t.tab === 'brackets'),
+  }));
 }
 
 function currentTab(): TournamentTab {
@@ -191,14 +197,18 @@ export function Banners() {
   const dismiss = (k: string) => store.update(c.id, { dismissed: [...dismissed, k] });
   const problems = problemsOnly(c.p.problems);
   const changes = Object.keys(c.scenario).length;
+  const sticky: ReactNode[] = [];
   const out: ReactNode[] = [];
-  if (c.replayAt !== undefined) out.push(<ReplayBar key="replay" />);
+  if (c.replayAt !== undefined) sticky.push(<ReplayBar key="replay" />);
   if (c.whatIf)
-    out.push(
-      <div key="whatif" className="bn whatif sticky">
+    sticky.push(
+      <div key="whatif" className="bn whatif">
         <IWhatIf size={18} />
-        <span style={{ flex: 1 }}>What-if · {plural(changes, 'change')}</span>
+        <span className="bn-text">
+          What-if · {plural(changes, 'change')}
+        </span>
         <button
+          className="bn-ghost"
           onClick={async () => {
             await navigator.clipboard?.writeText(location.href).catch(() => undefined);
             overlay.toast('Link with this scenario copied.');
@@ -206,15 +216,22 @@ export function Banners() {
         >
           Share
         </button>
-        <button onClick={() => c.setScenario({})}>Reset</button>
-        <button onClick={() => setParams({ if: null })}>Exit</button>
+        <button className="bn-ghost" onClick={() => c.setScenario({})}>
+          Reset
+        </button>
+        <button className="bn-solid" onClick={() => setParams({ if: null })}>
+          Exit
+        </button>
       </div>,
     );
   if (c.t.isDraft && !dismissed.has('draft'))
     out.push(
       <div key="draft" className="bn draft">
         <IWarn size={18} />
-        <span style={{ flex: 1 }}>Draft: the TD may still change this schedule.</span>
+        <span className="bn-text">Draft: the TD may still change this schedule.</span>
+        <button className="ib bn-x" aria-label="Dismiss" onClick={() => dismiss('draft')}>
+          <IClose size={16} />
+        </button>
       </div>,
     );
   c.t.announcements.forEach((a, i) => {
@@ -222,11 +239,11 @@ export function Banners() {
     if (dismissed.has(k)) return;
     out.push(
       <div key={k + i} className="bn ann">
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <span className="lbl" style={{ color: 'inherit', opacity: 0.85 }}>From the TD</span>
+        <div className="bn-text bn-stack">
+          <span className="lbl">From the TD</span>
           <span>{a}</span>
         </div>
-        <button className="ib" style={{ color: 'inherit' }} aria-label="Dismiss announcement" onClick={() => dismiss(k)}>
+        <button className="ib bn-x" aria-label="Dismiss announcement" onClick={() => dismiss(k)}>
           <IClose size={18} />
         </button>
       </div>,
@@ -236,9 +253,11 @@ export function Banners() {
     out.push(
       <div key="problems" className="bn problems">
         <IWarn size={18} />
-        <span style={{ flex: 1 }}>Some of this schedule may be read wrongly</span>
-        <button onClick={() => navigate(tHref(c.id, 'settings'))}>Check</button>
-        <button className="ib" aria-label="Dismiss" onClick={() => dismiss(`problems:${problems.length}`)}>
+        <span className="bn-text">Some of this schedule may be read wrongly</span>
+        <button className="bn-solid" onClick={() => navigate(tHref(c.id, 'settings'))}>
+          Check
+        </button>
+        <button className="ib bn-x" aria-label="Dismiss" onClick={() => dismiss(`problems:${problems.length}`)}>
           <IClose size={16} />
         </button>
       </div>,
@@ -247,21 +266,28 @@ export function Banners() {
     out.push(
       <div key="err" className="bn grey">
         <IRefresh size={18} />
-        <span style={{ flex: 1 }}>
-          Couldn’t refresh ({FETCH_ERROR_TEXT[c.rt.error.kind].replace(/\.$/, '')}) · showing {c.rt.lastSuccess ? new Date(c.rt.lastSuccess).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'saved data'}
+        <span className="bn-text">
+          Couldn’t refresh ({FETCH_ERROR_TEXT[c.rt.error.kind].replace(/\.$/, '').toLowerCase()}) · showing{' '}
+          {c.rt.lastSuccess ? new Date(c.rt.lastSuccess).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'saved data'}
         </span>
-        <button onClick={() => void store.runtime(c.id).refresh(true)}>Retry</button>
+        <button className="bn-solid" onClick={() => void store.runtime(c.id).refresh(true)}>
+          Retry
+        </button>
       </div>,
     );
   if (!online)
     out.push(
       <div key="off" className="bn grey">
         <IOffline size={18} />
-        <span>Offline · showing data from {c.rt.lastSuccess ? new Date(c.rt.lastSuccess).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'earlier'}</span>
+        <span className="bn-text">Offline · showing data from {c.rt.lastSuccess ? new Date(c.rt.lastSuccess).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'earlier'}</span>
       </div>,
     );
-  if (!out.length) return null;
-  return <div className="banners">{out}</div>;
+  return (
+    <>
+      {sticky.length > 0 && <div className="banners sticky">{sticky}</div>}
+      {out.length > 0 && <div className="banners">{out}</div>}
+    </>
+  );
 }
 
 export function TournamentShell({ children }: { children: ReactNode }) {
@@ -272,7 +298,7 @@ export function TournamentShell({ children }: { children: ReactNode }) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         openSearch(overlay, c);
-      } else if (e.key === '/' && !(e.target as HTMLElement)?.closest('input,textarea')) {
+      } else if (e.key === '/' && !(e.target as HTMLElement)?.closest('input,textarea,select')) {
         e.preventDefault();
         openSearch(overlay, c);
       }
@@ -288,7 +314,52 @@ export function TournamentShell({ children }: { children: ReactNode }) {
       <main className="main" id="main">
         {children}
       </main>
-      <TabBar />
+      {c.replayAt !== undefined ? <ReplayDock /> : <TabBar />}
+    </div>
+  );
+}
+
+/** Sub-page layout (settings, diagnostics, editors): back button, title and subtitle, optional action. */
+export function SubPage({ title, sub, back, action, children, wide }: { title: string; sub?: string; back?: string; action?: ReactNode; children: ReactNode; wide?: boolean }) {
+  const c = useT();
+  return (
+    <div className="app-shell sub-shell">
+      <header className="sub-hdr">
+        <div className="sub-hdr-row">
+          <a
+            className="ib"
+            href={back ?? tHref(c.id, 'info')}
+            aria-label="Back"
+            onClick={(e) => {
+              if (!back && history.length > 1) {
+                e.preventDefault();
+                history.back();
+              }
+            }}
+          >
+            <IChevronLeft />
+          </a>
+          <div className="sub-title">
+            <h1>{title}</h1>
+            {sub && <span>{sub}</span>}
+          </div>
+          {action}
+        </div>
+      </header>
+      <main className={`sub-main${wide ? ' wide' : ''}`}>{children}</main>
+    </div>
+  );
+}
+
+/** Page title inside a tab ("Schedule", "Pools · Women D1"), with an optional control on the right. */
+export function PageHead({ title, sub, right }: { title: ReactNode; sub?: ReactNode; right?: ReactNode }) {
+  return (
+    <div className="page-head">
+      <div className="page-head-text">
+        <h1>{title}</h1>
+        {sub && <span className="page-sub">{sub}</span>}
+      </div>
+      {right}
     </div>
   );
 }

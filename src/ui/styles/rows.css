@@ -1,0 +1,60 @@
+/* ---------- game rows (SpecComponents: compact row; HeroPhone: up next / just finished) ---------- */
+.grow { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); }
+[role=button] { cursor: pointer; }
+.grow[role=button]:hover, .nrow[role=button]:hover, .drow[role=button]:hover, .lrow[role=button]:hover { background: color-mix(in srgb, var(--surface2) 55%, var(--surface)); }
+.gtime { display: flex; flex-direction: column; align-items: flex-start; width: 46px; flex: none; line-height: 1.05; }
+.gtime .d { font-size: 18px; font-weight: 700; }
+.gday { font-size: 11px; color: var(--ink3); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.gteams { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; font-size: 14px; }
+.gside { display: flex; align-items: center; gap: 8px; min-height: 22px; }
+.gside > .tn, .gside > .slot { flex: 1; }
+.gside.lost { color: var(--ink3); }
+.gscore { font-size: 19px; min-width: 16px; text-align: right; }
+.gmeta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; max-width: 36%; }
+.gstage { font-size: 12px; font-weight: 600; color: var(--ink3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.bye { color: var(--ink3); }
+.bye-text { flex-direction: row !important; align-items: center; gap: 6px !important; }
+
+.mine-row { background: var(--accent-soft) !important; box-shadow: inset 3px 0 0 var(--accent); }
+.hyp { outline: 1.5px dashed var(--whatif); outline-offset: -2px; background: var(--whatif-soft) !important; }
+.simrow { background: repeating-linear-gradient(135deg, var(--surface) 0 8px, var(--surface2) 8px 16px) !important; }
+.np .gteams, .np .ln-teams { text-decoration: line-through; color: var(--ink3); }
+.ifreq { outline: 1.5px dashed var(--line); outline-offset: -2px; }
+
+/* up next: pitch badge, two lines, stage */
+.nlist, .dlist { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.nlist > * + *, .dlist > * + * { border-top: 1px solid var(--line); }
+.nrow { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); min-height: 60px; }
+.nteams { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.nteams .tn, .nteams .slot { font-weight: 500; }
+.nstage { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink3); white-space: nowrap; }
+.drow { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--surface); }
+.dteams { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dside { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.dside > .tn, .dside > .slot { flex: 1; min-width: 0; }
+.dside .d { font-size: 18px; }
+.dside.lost { color: var(--ink3); }
+.dside.won .tn-name { font-weight: 700; }
+.dside.drew .tn-name { font-weight: 600; }
+.dstage { font-size: 11px; font-weight: 600; color: var(--ink3); width: 64px; text-align: right; flex: none; }
+@media (min-width: 900px) {
+  .nlist, .dlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 14px; background: transparent; border: 0; box-shadow: none; overflow: visible; }
+  .nlist > * + *, .dlist > * + * { border-top: 0; }
+  .nrow { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .nteams { font-size: 15px; }
+  .nrow.mine-row { box-shadow: none; border-color: var(--accent); }
+  .drow { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; }
+  .drow.mine-row { box-shadow: none; border-color: var(--accent); }
+}
+
+/* single-line rows for dense lists */
+.lrow { display: flex; align-items: center; gap: 10px; padding: 8px 14px; min-height: 48px; background: var(--surface); font-size: 14px; }
+.ln-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ln-teams { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ln-name.strong { font-weight: 700; }
+.ln-name.slot-label { font-style: italic; color: var(--ink2); }
+.ln-v { color: var(--ink3); }
+.ln-meta { font-size: 11px; color: var(--ink3); }
+.ln-score { font-size: 18px; flex: none; min-width: 42px; text-align: right; }
+.more-link { display: block; width: 100%; text-align: left; border: 0; background: transparent; color: var(--accent); font-weight: 600; font-size: 13px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.more-link:hover { background: var(--surface2); }

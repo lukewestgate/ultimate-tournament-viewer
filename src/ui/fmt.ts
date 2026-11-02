@@ -33,7 +33,15 @@ export function until(target: number, now: number): string {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   if (h >= 24) return `in ${Math.round(h / 24)} day${Math.round(h / 24) === 1 ? '' : 's'}`;
-  return `in ${h} h${m ? ` ${m} min` : ''}`;
+  return `in ${h} h${m ? ` ${String(m).padStart(2, '0')}` : ''}`;
+}
+
+/** Countdown for a pill: "in 18 min", "in 2 h 05"; far away, the day instead ("Tomorrow", "Sunday"). */
+export function countdown(target: number, now: number, tz: string): string {
+  if (target - now <= 12 * 3600000) return until(target, now);
+  const d = (e: number) => new Date(e).toLocaleDateString('en-CA', { timeZone: tz });
+  if (d(target) === d(now + 86400000)) return 'Tomorrow';
+  return new Intl.DateTimeFormat('en-GB', { weekday: 'long', timeZone: tz }).format(new Date(target));
 }
 
 /** "Updated 2m ago". */
