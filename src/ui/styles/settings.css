@@ -111,3 +111,40 @@
 .pick-select { min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font: 700 14px Inter, sans-serif; color: var(--ink); max-width: 180px; }
 .center-link { align-self: center; }
 .card.fmt-template { border-radius: 16px; border-top: 0; }
+
+/* ---------- Manual mapping (SpecManual) ---------- */
+.man-grid { display: grid; gap: 18px; }
+@media (min-width: 1000px) { .man-grid { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } .man-side { position: sticky; top: 80px; } }
+.man-main, .man-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.man-q { margin: 0; font-size: 15px; color: var(--ink2); line-height: 1.45; }
+.man-tab { cursor: pointer; }
+.man-tab.on { background: var(--accent-soft); }
+.man-tab input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; margin: 0; }
+.man-tab .set-label b { font-size: 16px; }
+.man-hidden summary { cursor: pointer; font-weight: 700; font-size: 15px; padding: 4px 0; }
+.man-hidden .sr-tries { padding-top: 8px; }
+.man-sheet { overflow: hidden; }
+.man-hint { padding: 10px 14px; background: var(--accent-soft); color: var(--ink); font-size: 14px; line-height: 1.4; }
+.man-sheet .sheet-preview { max-height: 60vh; }
+.role-tag { display: block; font-size: 10px; font-weight: 600; color: var(--ink2); }
+.man-src { align-items: flex-start; }
+.man-pitches { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.mini-field { max-width: 130px; min-height: 36px; }
+.man-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.man-stat { display: flex; flex-direction: column; padding: 10px; border-radius: 12px; background: var(--surface2); }
+.man-stat b { font-size: 24px; line-height: 1.1; }
+.man-stat span { font-size: 12px; color: var(--ink3); }
+.man-games { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.man-game { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; font-size: 14px; }
+.man-game + .man-game { border-top: 1px solid var(--line); }
+.man-game b { width: 76px; flex: none; font-size: 15px; }
+.man-game > span:nth-child(2) { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.role-palette { display: flex; flex-wrap: wrap; gap: 8px; }
+.role { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--line); font: 700 14px Inter, sans-serif; background: var(--surface); color: var(--ink); }
+.role .dot { width: 10px; height: 10px; border-radius: 3px; }
+.role.on { background: color-mix(in srgb, var(--live) 14%, var(--surface)); }
+.set-row.man-tab > input { flex: none; }
+.set-row.man-tab > .set-label { flex: 1; }
+.set-row > .mini-field:first-child { flex: none; }
+.set-row > .mini-field + .small { flex: 1; }
+.sub-shell:has(.sub-main.wide) .sub-hdr-row { max-width: 1200px; }
