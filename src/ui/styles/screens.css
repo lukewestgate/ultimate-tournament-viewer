@@ -40,29 +40,6 @@ details.dev summary { cursor: pointer; font-weight: 600; color: var(--ink2); }
 .gd-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .gd-time { font-size: 22px; font-weight: 700; }
 
-/* ---------- pools ---------- */
-.pool-chips { padding-bottom: 2px; }
-.pool-grid { display: grid; gap: 16px; }
-@media (min-width: 1000px) { .pool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
-.pool-card { overflow: hidden; display: flex; flex-direction: column; }
-.pool-head { display: flex; align-items: center; gap: 8px; padding: 12px 14px 6px; }
-.pool-head h3 { font-size: 18px; }
-.pool-head h3 a { color: inherit; text-decoration: none; }
-.table-scroll { overflow-x: auto; }
-.pt-team { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.tie-mark { color: var(--ink3); margin-left: 2px; font-weight: 700; }
-.ochip { flex: none; font: 600 11px Inter, sans-serif; padding: 2px 6px; border-radius: 6px; white-space: nowrap; }
-.ochip.good { background: var(--win-soft); color: var(--win); }
-.ochip.bad { background: var(--surface2); color: var(--ink3); }
-.ochip.open { background: var(--accent-soft); color: var(--accent); }
-.explain { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; border-top: 1px solid var(--line); }
-.ex-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--ink2); padding: 0 14px; }
-.explain .ex-row { padding: 0; }
-.ex-row.tied { padding-top: 8px; padding-bottom: 8px; }
-.ex-badge { flex: none; min-width: 32px; height: 22px; border-radius: 6px; background: var(--surface2); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
-.leads { padding: 10px 14px; color: var(--ink2); border-top: 1px solid var(--line); }
-.td-note { display: flex; align-items: center; gap: 8px; padding: 0 14px 8px; font-size: 13px; }
-.rules-line { margin: 0; }
 
 /* ---------- brackets ---------- */
 .bracket-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
