@@ -385,3 +385,30 @@ table.cmp th, table.cmp td { text-align: left; padding: 8px 10px; border-bottom:
 table.cmp thead th { font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: .06em; }
 table.cmp tr.muted td { color: var(--ink3); }
 pre.raw { margin: 0; padding: 14px; border-radius: 12px; background: var(--surface2); font-size: 12px; overflow: auto; max-height: 420px; }
+
+/* ---------- manual mapping ---------- */
+.manual { display: flex; flex-direction: column; gap: 14px; }
+.tab-chips .chip-hint { font-weight: 500; color: inherit; opacity: .7; }
+.hint { margin: 0; color: var(--accent); font-weight: 600; }
+.sheet-preview { overflow: auto; max-height: 60vh; }
+.sheet-preview table { border-collapse: collapse; font-size: 12px; }
+.sheet-preview th { position: sticky; top: 0; background: var(--surface2); color: var(--ink3); font-weight: 600; padding: 4px 6px; border: 1px solid var(--line); z-index: 1; min-width: 40px; }
+.sheet-preview tbody th { left: 0; z-index: 2; padding: 0; }
+.sheet-preview td { border: 1px solid var(--line); padding: 4px 6px; white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 40px; height: 32px; }
+.sheet-preview td:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sheet-preview td.sel { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+.sheet-preview tr.hdr-row-m td { border-bottom: 2px solid var(--ink); font-weight: 700; }
+.role-tag { display: block; font-size: 10px; color: var(--ink); }
+.row-num { border: 0; background: transparent; width: 100%; min-height: 32px; color: var(--ink3); font-weight: 600; }
+.row-num:hover { background: var(--accent-soft); color: var(--accent); }
+.role-palette { display: flex; flex-wrap: wrap; gap: 8px; }
+.role { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); font: 700 13px Inter, sans-serif; background: var(--surface); }
+.role.on { background: var(--accent-soft); }
+.src-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 6px; }
+.mini-field { max-width: 130px; min-height: 36px; }
+.preview-games { margin: 0; padding-left: 18px; }
+
+/* ---------- format editor ---------- */
+.fmt-side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; min-height: 52px; padding: 8px 14px; border: 0; background: var(--surface); text-align: left; }
+.fmt-side:hover { background: var(--surface2); }
+.fmt-label { color: var(--ink3); font-size: 12px; width: 120px; }

@@ -13,6 +13,8 @@ import { WhatIf } from './WhatIf';
 import { Settings } from './Settings';
 import { AppSettings } from './AppSettings';
 import { Diagnostics } from './Diagnostics';
+import { Manual } from './Manual';
+import { FormatEditor } from './FormatEditor';
 
 export interface ScreenProps {
   arg?: string;
@@ -28,5 +30,5 @@ export const screens: {
   Home,
   Add,
   AppSettings,
-  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen, whatif: WhatIf, settings: Settings, diagnostics: Diagnostics },
+  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen, whatif: WhatIf, settings: Settings, diagnostics: Diagnostics, manual: Manual, format: FormatEditor },
 };
