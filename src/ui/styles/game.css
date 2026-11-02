@@ -45,3 +45,45 @@ button.wic-name { min-height: 52px; padding: 0 12px; border-radius: 12px; border
 .if-row { display: flex; gap: 12px; font-size: 14px; line-height: 1.4; }
 .if-row > b { width: 40px; flex: none; font-size: 16px; }
 .if-good { color: var(--win); }
+
+/* ---------- What-if workspace (SpecWhatIf) ---------- */
+.in-whatif .main { box-shadow: none; background-image: repeating-linear-gradient(135deg, transparent 0 18px, color-mix(in srgb, var(--whatif) 6%, transparent) 18px 19px); }
+.wi-page { display: flex; flex-direction: column; gap: 16px; }
+.wi-title { display: flex; align-items: center; gap: 10px; }
+.wi-title h1 { font-size: 24px; }
+.check-row { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink2); cursor: pointer; }
+.check-row input { width: 18px; height: 18px; accent-color: var(--whatif); }
+.wi-grid { display: grid; gap: 20px; }
+@media (min-width: 900px) { .wi-grid { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; } .wi-side { position: sticky; top: calc(var(--hdr-h) + 64px); } }
+.wi-main, .wi-side { display: flex; flex-direction: column; gap: 18px; }
+.wi-table { overflow: hidden; }
+.wi-row { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; }
+.wi-row + .wi-row { border-top: 1px solid var(--line); }
+.wi-row.on { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.wi-rank { width: 16px; font-size: 18px; color: var(--ink3); }
+.delta { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 24px; border-radius: 7px; font: 700 12px Inter, sans-serif; color: var(--ink3); }
+.delta.up { background: var(--win-soft); color: var(--win); }
+.delta.down { background: var(--surface2); color: var(--ink2); }
+.wi-team { flex: 1; min-width: 0; display: flex; align-items: center; border: 0; background: transparent; padding: 0; min-height: 44px; text-align: left; color: var(--ink); font-size: 15px; }
+.wi-diff { width: 36px; text-align: right; font-size: 15px; color: var(--ink2); }
+.wi-pts { width: 26px; text-align: right; font-size: 20px; }
+.explain.flush { margin: 0; border-radius: 0; }
+.wi-games { display: flex; flex-direction: column; gap: 12px; }
+.wcard { display: flex; flex-direction: column; gap: 12px; padding: 12px 14px 14px; border-radius: 16px; border: 1.5px dashed var(--whatif); background: var(--surface); }
+.wcard.on { background: var(--whatif-soft); }
+.wcard.locked { border-style: solid; border-color: var(--line); }
+.wcard-head { display: flex; align-items: center; gap: 8px; min-height: 26px; font-size: 14px; }
+.wcard-head .d { font-size: 18px; }
+.wcard-what { color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.wcard .seg button { min-height: 42px; font-size: 14px; }
+.wcard-scores { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wcard-note { flex: 1; text-align: right; font-size: 12px; color: var(--ink3); min-width: 80px; }
+.wi-quick { display: flex; flex-direction: column; gap: 6px; }
+.wi-need { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1.5px solid var(--whatif); box-shadow: none; }
+.wi-need p { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink2); }
+.wi-need-head { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 16px; }
+.inline-select { border: 0; background: transparent; font: 700 16px Inter, sans-serif; color: var(--ink); padding: 2px 18px 2px 2px; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; appearance: auto; }
+.inline-select.muted { font-weight: 500; color: var(--ink2); }
+.if-bad { color: var(--live); }
+.wi-cards { display: grid; gap: 12px; }
+@media (min-width: 1200px) { .wi-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

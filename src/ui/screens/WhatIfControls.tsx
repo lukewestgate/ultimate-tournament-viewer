@@ -1,5 +1,6 @@
 import { useT } from '../ctx';
-import { Seg, Side } from '../parts';
+import { Seg, Side, shortName } from '../parts';
+import { timeOf } from '../fmt';
 import type { Hypo } from '../../engine/scenario';
 import { withoutTag } from '../../extract/names';
 
@@ -129,6 +130,63 @@ function Stepper({ label, value, onChange }: { label: string; value?: number; on
       <button className="ib" aria-label={`${label} plus`} onClick={() => onChange(Math.min(CAP, v + 1))}>
         +
       </button>
+    </div>
+  );
+}
+
+/** Compact what-if card for the pool workspace (SpecWhatIf #1). */
+export function WhatIfGameCard({ id }: { id: string }) {
+  const c = useT();
+  const v = c.view.byId.get(id);
+  if (!v || v.g.isBye) return null;
+  const h = c.scenario[id];
+  const real = v.result && !v.result.hypothetical;
+  const [a, b] = v.sides;
+  const nameA = withoutTag(a.team ?? a.label ?? 'Team 1');
+  const nameB = withoutTag(b.team ?? b.label ?? 'Team 2');
+  const set = (next: Hypo | undefined) => {
+    const s = { ...c.scenario };
+    if (next) s[id] = next;
+    else delete s[id];
+    c.setScenario(s);
+  };
+  const draws = v.g.stage !== 'placement' ? c.t.rules.drawsAllowed.pool : c.t.rules.drawsAllowed.placement;
+  const locked = real && !h?.override;
+  const outcome = locked ? '' : (h?.outcome ?? '');
+  const setScore = (na: number, nb: number) => {
+    const o = na > nb ? 'A' : nb > na ? 'B' : 'D';
+    set({ outcome: o === 'D' && !draws ? (h?.outcome ?? 'A') : o, sa: na, sb: nb, override: h?.override || Boolean(real) });
+  };
+  const short = (n: string) => (n.length > 10 ? shortName(n) : n);
+  return (
+    <div className={`wcard${h ? ' on' : ''}${locked ? ' locked' : ''}`}>
+      <div className="wcard-head">
+        <b className="d">{timeOf(v.g.start, c.t.timeZone)}</b>
+        <span className="wcard-what">
+          {v.g.pitch.label ? `P${v.g.pitch.label} · ` : ''}
+          {nameA} v {nameB}
+        </span>
+        <span style={{ flex: 1 }} />
+        {h && <span className="tag if sm">IF</span>}
+        {locked && <span className="tag quiet sm">Final {v.result!.sa !== undefined ? `${v.result!.sa}–${v.result!.sb}` : ''}</span>}
+      </div>
+      <Seg
+        label={`Result of ${nameA} v ${nameB}`}
+        className="violet"
+        value={outcome}
+        options={[
+          { value: 'A', label: short(nameA) },
+          ...(draws ? [{ value: 'D', label: 'Draw' }] : []),
+          { value: 'B', label: short(nameB) },
+        ]}
+        onChange={(o) => set({ outcome: o as Hypo['outcome'], sa: undefined, sb: undefined, override: Boolean(real) })}
+      />
+      <div className="wcard-scores">
+        <Stepper label={nameA} value={locked ? undefined : h?.sa} onChange={(n) => setScore(n, h?.sb ?? 0)} />
+        <span className="muted">–</span>
+        <Stepper label={nameB} value={locked ? undefined : h?.sb} onChange={(n) => setScore(h?.sa ?? 0, n)} />
+        <span className="wcard-note">{locked ? 'real result · tap to override' : h ? (h.sa !== undefined ? 'exact score set' : 'result only') : 'not set'}</span>
+      </div>
     </div>
   );
 }

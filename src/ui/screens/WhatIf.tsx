@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { buildView } from '../../engine/view';
 import { parseTeamKey } from '../../store/settings';
 import { withoutTag } from '../../extract/names';
 import { useT } from '../ctx';
 import { ordinal, signed } from '../fmt';
-import { Empty, GameRow, Section, Seg, TeamName } from '../parts';
+import { Empty, TeamName } from '../parts';
 import { setParams, tHref } from '../router';
-import { WhatIfControls } from './WhatIfControls';
-import { needFor } from '../outlook';
+import { WhatIfGameCard } from './WhatIfControls';
+import { leadsFor, needFor, teamOutlook } from '../outlook';
 import type { Scenario } from '../../engine/scenario';
 import type { ScreenProps } from './index';
 
-/** Pool what-if workspace (spec §10.4). */
+/** Pool what-if workspace (spec §10.4; SpecWhatIf #1). */
 export function WhatIf({ arg }: ScreenProps) {
   const c = useT();
   useEffect(() => {
@@ -23,15 +23,17 @@ export function WhatIf({ arg }: ScreenProps) {
   const teams = st?.rows.map((r) => r.team) ?? [];
   const stored = sessionStorage.getItem('tv:whatifTeam');
   const initial = stored ? parseTeamKey(stored).name : c.primary ? parseTeamKey(c.primary).name : undefined;
-  const [team, setTeam] = useState<string | undefined>(initial && teams.includes(initial) ? initial : teams[0]);
+  const [team, setTeam] = useState<string | undefined>(initial && teams.includes(initial) ? initial : (teams.find((t) => c.isFollowed(t, pool?.division)) ?? teams[0]));
   const [target, setTarget] = useState(2);
   const [showFinished, setShowFinished] = useState(false);
   if (!pool || !st) return <Empty title="No pools" body="What-if needs a pool to explore." />;
   const realSt = real.standings.get(pool.name)!;
   const games = c.view.games.filter((v) => v.g.pool === pool.name && v.g.division === pool.division && !v.g.isBye);
-  const remaining = games.filter((v) => !v.result || v.result.hypothetical);
-  const finished = games.filter((v) => v.result && !v.result.hypothetical);
-  const need = team && !st.complete ? needFor(c.view, pool.name, team, Math.min(target, teams.length - 1)) : undefined;
+  const remaining = games.filter((v) => !v.result || v.result.hypothetical || c.scenario[v.g.id]?.override);
+  const finished = games.filter((v) => !remaining.includes(v));
+  const tgt = Math.max(1, Math.min(target, teams.length - 1));
+  const need = team && !st.complete ? needFor(c.view, pool.name, team, tgt) : undefined;
+  const o = team ? teamOutlook(c.view, pool.name, team) : undefined;
   const quick = (mode: 'win' | 'lose' | 'clear') => {
     const s: Scenario = { ...c.scenario };
     for (const v of remaining) {
@@ -41,128 +43,147 @@ export function WhatIf({ arg }: ScreenProps) {
       }
       const i = v.sides.findIndex((x) => x.team === team);
       if (i < 0) continue;
-      const won = mode === 'win';
-      s[v.g.id] = { outcome: (i === 0) === won ? 'A' : 'B' };
+      s[v.g.id] = { outcome: (i === 0) === (mode === 'win') ? 'A' : 'B' };
     }
     c.setScenario(s);
   };
   const name = pool.name.length <= 3 ? `Pool ${pool.name}` : pool.name;
+  const tieGroups = st.tied.filter((g) => st.rows.some((r) => g.teams.includes(r.team) && r.p > 0));
+  const teamName = withoutTag(team ?? '');
+  let verdict: ReactNode = null;
+  if (team && o) {
+    const lead = o.worst <= tgt ? leadsFor(c.view, pool.name, o.worst) : undefined;
+    if (o.worst <= tgt)
+      verdict = (
+        <>
+          In this scenario: <b className="if-good">already {tgt === 1 ? 'top' : 'through'}</b>
+          {lead && tgt > 1 ? ` to ${lead}` : ''}.{o.best !== o.worst ? ` The rest only decides ${ordinal(o.best)} or ${ordinal(o.worst)}.` : ''}
+        </>
+      );
+    else if (o.best > tgt) verdict = <>In this scenario: <b className="if-bad">out of the top {tgt}</b>; best possible is {ordinal(o.best)}.</>;
+  }
   return (
-    <>
-      <div className="home-head">
-        <h1 style={{ fontSize: 22 }}>What-if · {name}</h1>
+    <div className="wi-page">
+      <div className="wi-title">
+        <h1>{name} · what if…</h1>
         <span style={{ flex: 1 }} />
-        <a className="btn small" href={tHref(c.id, 'pools', pool.name)}>
-          Pool page
-        </a>
+        {finished.length > 0 && (
+          <label className="check-row">
+            <input type="checkbox" checked={showFinished} onChange={(e) => setShowFinished(e.target.checked)} /> Show finished
+          </label>
+        )}
       </div>
-      <div className="grid2">
-        <div className="stack" style={{ gap: 20 }}>
-          <section className="card table-scroll">
-            <table className="pt">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Team</th>
-                  <th>P</th>
-                  <th>W</th>
-                  <th>D</th>
-                  <th>L</th>
-                  <th>±</th>
-                  <th>Pts</th>
-                  <th title="Change from the real table">Δ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {st.rows.map((r) => {
-                  const before = realSt.rows.find((x) => x.team === r.team)?.rank ?? r.rank;
-                  const moved = before - r.rank;
+      <div className="wi-grid">
+        <div className="wi-main">
+          <section className="card wi-table">
+            {st.rows.map((r) => {
+              const before = realSt.rows.find((x) => x.team === r.team)?.rank ?? r.rank;
+              const moved = before - r.rank;
+              return (
+                <div key={r.team} className={`wi-row${r.team === team ? ' on' : ''}`}>
+                  <b className="d wi-rank">{r.rank}</b>
+                  <span className={`delta${moved > 0 ? ' up' : moved < 0 ? ' down' : ''}`}>{moved > 0 ? `↑${moved}` : moved < 0 ? `↓${-moved}` : '='}</span>
+                  <button className="wi-team" onClick={() => setTeam(r.team)} aria-pressed={r.team === team}>
+                    <TeamName name={r.team} division={pool.division} bold={r.team === team} />
+                  </button>
+                  <span className="d wi-diff">{signed(r.diff)}</span>
+                  <b className="d wi-pts">{r.pts}</b>
+                </div>
+              );
+            })}
+            {(st.explanations.length > 0 || tieGroups.length > 0) && (
+              <div className="explain flush">
+                {st.explanations.map((e) => {
+                  const ra = st.rows.findIndex((r) => r.team === e.above) + 1;
+                  const rb = st.rows.findIndex((r) => r.team === e.below) + 1;
+                  const at = e.text.indexOf(': ');
                   return (
-                    <tr key={r.team} className={r.team === team ? 'mine' : ''}>
-                      <td>
-                        {r.rank}
-                        {r.tiedWith.length > 0 && <span className="tie-mark">=</span>}
-                      </td>
-                      <td>
-                        <TeamName name={r.team} division={pool.division} />
-                      </td>
-                      <td>{r.p}</td>
-                      <td>{r.w}</td>
-                      <td>{r.d}</td>
-                      <td>{r.l}</td>
-                      <td>{signed(r.diff)}</td>
-                      <td>{r.pts}</td>
-                      <td className={moved > 0 ? 'up' : moved < 0 ? 'down' : ''}>{moved > 0 ? `▲${moved}` : moved < 0 ? `▼${-moved}` : '–'}</td>
-                    </tr>
+                    <div key={`${e.above}-${e.below}`} className="ex-row">
+                      <span className="ex-badge d">
+                        {ra}={rb}
+                      </span>
+                      <span>{at > 0 ? <><b>{e.text.slice(0, at)}:</b> {e.text.slice(at + 2)}.</> : `${e.text}.`}</span>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+                {tieGroups.map((g) => (
+                  <div key={g.teams.join('|')} className="ex-row">
+                    <span className="ex-badge d">=</span>
+                    <span>
+                      <b>Still tied:</b> {g.teams.map(withoutTag).join(' and ')} · {g.reason}.
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
-          <Section title="Tie-breaks">
-            <div className="card pad stack small">
-              {!st.explanations.length && !st.tied.some((g) => st.rows.some((r) => g.teams.includes(r.team) && r.p > 0)) && <span className="muted">No teams are level on points.</span>}
-              {st.explanations.map((e) => (
-                <span key={`${e.above}-${e.below}`}>{e.text}.</span>
-              ))}
-              {st.tied.filter((g) => st.rows.some((r) => g.teams.includes(r.team) && r.p > 0)).map((g) => (
-                <span key={g.teams.join('|')}>
-                  <b>Still tied:</b> {g.teams.map(withoutTag).join(', ')} — {g.reason}.
-                </span>
+          <section className="wi-games">
+            <span className="lbl">{showFinished ? 'Games' : 'Remaining games'}</span>
+            {!remaining.length && !showFinished && <Empty title="No games left" body="Tick “Show finished” to override a real result." />}
+            <div className="wi-cards">
+              {[...remaining, ...(showFinished ? finished : [])].map((v) => (
+                <WhatIfGameCard key={v.g.id} id={v.g.id} />
               ))}
             </div>
-          </Section>
-          <Section title="Games" right={finished.length > 0 ? <button className="btn small" onClick={() => setShowFinished(!showFinished)}>{showFinished ? 'Hide finished' : 'Show finished'}</button> : undefined}>
-            {!remaining.length && !showFinished && <Empty title="No games left" body="Show finished games to override a real result." />}
-            {[...remaining, ...(showFinished ? finished : [])].map((v) => (
-              <div key={v.g.id} className="stack" style={{ gap: 6 }}>
-                <div className="card list">
-                  <GameRow v={v} showTime showDay />
-                </div>
-                <WhatIfControls id={v.g.id} />
-              </div>
-            ))}
-          </Section>
+          </section>
         </div>
-        <aside className="stack" style={{ gap: 20 }}>
-          <Section title="What do we need?">
-            <div className="card pad stack">
-              <select className="field" value={team} onChange={(e) => setTeam(e.target.value)} aria-label="Team">
+        <aside className="wi-side">
+          {team && remaining.some((v) => v.sides.some((s) => s.team === team)) && (
+            <section className="wi-quick">
+              <span className="lbl">Quick scenarios</span>
+              <div className="sr-tries">
+                <button className="chip" onClick={() => quick('win')}>
+                  {teamName} win all
+                </button>
+                <button className="chip" onClick={() => quick('lose')}>
+                  {teamName} lose all
+                </button>
+                <button className="chip" onClick={() => quick('clear')}>
+                  Clear
+                </button>
+              </div>
+            </section>
+          )}
+          <section className="card wi-need">
+            <div className="wi-need-head">
+              <b>What does</b>
+              <select className="inline-select" value={team} onChange={(e) => setTeam(e.target.value)} aria-label="Team">
                 {teams.map((t) => (
                   <option key={t} value={t}>
                     {withoutTag(t)}
                   </option>
                 ))}
               </select>
-              <Seg label="Target" value={String(target)} options={Array.from({ length: Math.min(teams.length - 1, 4) }, (_, i) => ({ value: String(i + 1), label: i === 0 ? '1st' : `Top ${i + 1}` }))} onChange={(v) => setTarget(Number(v))} />
-              {st.complete ? (
-                <span>
-                  {withoutTag(team ?? '')} finish {ordinal(st.rows.findIndex((r) => r.team === team) + 1)} in this scenario.
-                </span>
-              ) : (
-                need?.conditions.map((t, i) => (
-                  <div key={t} className={`need${i === 0 ? ' first' : ''}`}>
-                    {t}
-                  </div>
-                ))
-              )}
+              <b>need?</b>
+              <span className="muted">·</span>
+              <select className="inline-select muted" value={tgt} onChange={(e) => setTarget(Number(e.target.value))} aria-label="Target">
+                {Array.from({ length: Math.min(teams.length - 1, 4) }, (_, i) => (
+                  <option key={i} value={i + 1}>
+                    {i === 0 ? 'finish 1st' : `finish top ${i + 1}`}
+                  </option>
+                ))}
+              </select>
             </div>
-          </Section>
-          <Section title="Quick scenarios">
-            <div className="row-btns">
-              <button className="btn small" onClick={() => quick('win')}>
-                All remaining won by {withoutTag(team ?? '')}
-              </button>
-              <button className="btn small" onClick={() => quick('lose')}>
-                All lost by {withoutTag(team ?? '')}
-              </button>
-              <button className="btn small" onClick={() => quick('clear')}>
-                Clear
-              </button>
-            </div>
-          </Section>
+            {st.complete ? (
+              <p>
+                {teamName} finish {ordinal(st.rows.findIndex((r) => r.team === team) + 1)} in this scenario.
+              </p>
+            ) : verdict ? (
+              <p>{verdict}</p>
+            ) : (
+              need?.conditions.map((t, i) => (
+                <div key={t} className="need">
+                  <span className={`tag sm ${i === 0 ? 'win' : 'quiet'}`}>{i === 0 ? 'Enough' : 'Or'}</span>
+                  <span>{t}</span>
+                </div>
+              ))
+            )}
+          </section>
+          <a className="link" href={tHref(c.id, 'pools', pool.name)}>
+            Back to {name}
+          </a>
         </aside>
       </div>
-    </>
+    </div>
   );
 }
