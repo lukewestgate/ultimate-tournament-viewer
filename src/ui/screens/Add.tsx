@@ -4,10 +4,11 @@ import { FETCH_ERROR_TEXT } from '../../sheets/fetch';
 import { store, useRuntime } from '../../store/app';
 import { problemsOnly } from '../../extract/quality';
 import { TournamentProvider, useT } from '../ctx';
+import { SubPage } from '../Shell';
 import { href, navigate, tHref } from '../router';
 import { ErrorNextStep } from '../App';
 import { dateLabel, plural } from '../fmt';
-import { IChevronLeft, IWarn } from '../icons';
+import { IWarn } from '../icons';
 import { useOverlay } from '../overlay';
 import { TeamPicker } from '../TeamPicker';
 
@@ -80,21 +81,20 @@ export function Add() {
     return () => window.removeEventListener('hashchange', on);
   }, []);
   return (
-    <div className="page">
-      <div className="home-head">
-        <a className="ib" href={href({ name: 'home' })} aria-label="Back to tournaments">
-          <IChevronLeft />
-        </a>
-        <h1>Add tournament</h1>
-      </div>
+    <SubPage title="Add tournament" back={href({ name: 'home' })}>
       {!id ? (
-        <AddForm />
+        <>
+          <p className="lead">Paste the link to the tournament’s Google Sheet. Everything stays on this device.</p>
+          <section className="card set-pad">
+            <AddForm />
+          </section>
+        </>
       ) : (
         <TournamentProvider id={id} fallback={() => <Progress id={id} />}>
           <Preview />
         </TournamentProvider>
       )}
-    </div>
+    </SubPage>
   );
 }
 
@@ -186,10 +186,10 @@ function Preview() {
             </div>
           </div>
         )}
-        <div className="row-btns">
-          <a className="btn primary" href={tHref(c.id)}>
-            Open
-          </a>
+        <a className="btn primary block big" href={tHref(c.id)}>
+          Open
+        </a>
+        <div className="two-btns">
           <button className="btn" onClick={() => overlay.openSheet(<TeamPicker compact />, { title: 'Pick your team(s)' })}>
             Pick your team(s)
           </button>

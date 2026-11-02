@@ -1,24 +1,6 @@
 /* ---------- switcher ---------- */
-.switcher { display: flex; flex-direction: column; gap: 4px; }
-.sw-row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 10px; border: 0; background: transparent; border-radius: 12px; text-align: left; width: 100%; }
-button.sw-row:hover { background: var(--surface2); }
-.sw-row.current { background: var(--accent-soft); color: var(--accent); }
-.sw-text { display: flex; flex-direction: column; min-width: 0; }
-.sw-text b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
-.sw-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); margin-top: 6px; }
 
 /* ---------- home ---------- */
-.home-head { display: flex; align-items: center; gap: 8px; }
-.add-btn { align-self: flex-start; }
-.cards { display: grid; gap: 10px; }
-@media (min-width: 700px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.tcard { display: flex; align-items: flex-start; gap: 4px; padding: 4px; }
-.tcard-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 10px 6px 10px 12px; color: inherit; text-decoration: none; border-radius: 12px; }
-.tcard-main:hover { background: var(--surface2); }
-.tcard-top { display: flex; gap: 6px; flex-wrap: wrap; }
-.tcard-title { font-size: 17px; }
-.tcard.big .tcard-title { font-size: 20px; }
-.tcard-next { font-size: 13px; color: var(--ink2); padding-top: 8px; border-top: 1px solid var(--line); }
 .small { font-size: 13px; }
 .lead { font-size: 16px; color: var(--ink2); margin: 0; }
 .err { color: var(--error); }

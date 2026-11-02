@@ -14,6 +14,7 @@ import './ui/styles/game.css';
 import './ui/styles/search.css';
 import './ui/styles/info.css';
 import './ui/styles/settings.css';
+import './ui/styles/home.css';
 import { App } from './ui/App';
 
 createRoot(document.getElementById('root')!).render(

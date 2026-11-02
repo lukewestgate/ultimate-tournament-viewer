@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useT } from './ctx';
-import { IStar } from './icons';
+import { ISearch, IStar } from './icons';
 import { TeamName } from './parts';
 import { teamKey } from '../store/settings';
 import { foldName } from '../extract/names';
@@ -18,11 +18,17 @@ export function TeamPicker({ compact }: { compact?: boolean }) {
   }
   return (
     <div className="stack">
-      {c.t.teams.length > 12 && <input className="field" placeholder="Find a team" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Find a team" />}
+      {c.t.teams.length > 12 && (
+        <label className="search-field boxed picker-search">
+          <ISearch size={18} />
+          <input placeholder={`Find a team (${c.t.teams.length})`} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Find a team" />
+        </label>
+      )}
+      {c.followed.length === 0 && <p className="small muted" style={{ margin: 0 }}>Star the teams you care about. The first one becomes your primary team.</p>}
       {[...groups.entries()].map(([div, teams]) => (
         <div key={div} className="stack" style={{ gap: 4 }}>
           {div && <div className="lbl">{div}</div>}
-          <div className={compact ? 'list' : 'card list'}>
+          <div className={`card list${compact ? ' flat' : ''}`}>
             {teams.map((team) => {
               const k = teamKey(team.name, team.division);
               const on = c.isFollowed(team.name, team.division);
@@ -30,7 +36,7 @@ export function TeamPicker({ compact }: { compact?: boolean }) {
                 <div key={k} className="follow-row">
                   <TeamName name={team.name} division={team.division} plain />
                   <span style={{ flex: 1 }} />
-                  {on && c.primary === k && <span className="tag primary">PRIMARY</span>}
+                  {on && c.primary === k && <span className="tag primary sm">Primary</span>}
                   {on && c.primary !== k && (
                     <button className="btn small" onClick={() => c.setPrimary(k)}>
                       Make primary

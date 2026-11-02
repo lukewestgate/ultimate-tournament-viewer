@@ -4,10 +4,12 @@ import { homeGroup, isOnToday, type HomeGroup } from '../../store/launch';
 import type { TournamentSettings } from '../../store/settings';
 import { FIXTURE_NAMES } from '../../store/fixtures';
 import { sourceFromKey, sheetViewUrl } from '../../sheets/links';
-import { dateRange, plural, until } from '../fmt';
+import { dateRange, fallbackTitle, plural, until } from '../fmt';
 import { useOverlay } from '../overlay';
 import { href, navigate, tHref } from '../router';
-import { IMore, IPlus, ISettings } from '../icons';
+import { IChevronRight, IExternal, IMore, IPlus, ISettings, IShare } from '../icons';
+import { Logo } from '../Shell';
+import { PitchBadge } from '../parts';
 import { AddForm } from './Add';
 import { withoutTag } from '../../extract/names';
 
@@ -34,13 +36,17 @@ export function Home() {
   return (
     <div className="page home">
       <div className="home-head">
+        <Logo size={40} />
         <h1>Tournaments</h1>
         <span style={{ flex: 1 }} />
+        <a className="btn primary add-btn desk-only" href={href({ name: 'add' })}>
+          <IPlus size={18} /> Add tournament
+        </a>
         <a className="ib" href={href({ name: 'appSettings' })} aria-label="App settings">
           <ISettings />
         </a>
       </div>
-      <a className="btn primary add-btn" href={href({ name: 'add' })}>
+      <a className="btn primary add-btn phone-only" href={href({ name: 'add' })}>
         <IPlus size={18} /> Add tournament
       </a>
       {GROUPS.map(({ key, title }) => {
@@ -50,6 +56,7 @@ export function Home() {
           <section key={key} className="section">
             <div className="section-head">
               <h2>{title}</h2>
+              <span className="sub">{list.length}</span>
             </div>
             <div className="cards">
               {list.map((s) => (
@@ -80,18 +87,21 @@ function TournamentCard({ s, big }: { s: TournamentSettings; big?: boolean }) {
   );
   else if (sum?.datesGuessed) status = <span className="tag warn">Dates not confirmed</span>;
   else if (sum?.lastEnd && sum.lastEnd < now) status = <span className="tag quiet">Finished</span>;
+  else if (!sum) status = <span className="tag outline">Not opened yet</span>;
   else status = <span className="tag quiet">{dateRange(sum?.days.map((d) => d.date) ?? [])}</span>;
+  const title = sum?.title ?? fallbackTitle(s.id);
   const menu = () =>
     overlay.openSheet(
-      <div className="stack">
-        <a className="btn" href={tHref(s.id)} onClick={() => overlay.closeSheet()}>
-          Open
+      <div className="card set-list menu-list">
+        <a className="set-row nav" href={tHref(s.id)} onClick={() => overlay.closeSheet()}>
+          <span>Open</span>
+          <IChevronRight size={18} />
         </a>
         <button
-          className="btn"
+          className="set-row nav"
           onClick={async () => {
             const link = `${location.origin}${location.pathname}?sheet=${encodeURIComponent(s.id)}`;
-            if (navigator.share) await navigator.share({ title: sum?.title, url: link }).catch(() => undefined);
+            if (navigator.share) await navigator.share({ title, url: link }).catch(() => undefined);
             else {
               await navigator.clipboard?.writeText(link).catch(() => undefined);
               overlay.toast('Link copied.');
@@ -99,26 +109,31 @@ function TournamentCard({ s, big }: { s: TournamentSettings; big?: boolean }) {
             overlay.closeSheet();
           }}
         >
-          Share link
+          <span>Share link</span>
+          <IShare size={18} />
         </button>
-        <a className="btn" href={tHref(s.id, 'settings')} onClick={() => overlay.closeSheet()}>
-          Tournament settings
+        <a className="set-row nav" href={tHref(s.id, 'settings')} onClick={() => overlay.closeSheet()}>
+          <span>How this sheet is read</span>
+          <IChevronRight size={18} />
         </a>
-        <a className="btn" href={sheetViewUrl(sourceFromKey(s.id))} target="_blank" rel="noreferrer">
-          Open the original sheet
-        </a>
+        {!s.id.startsWith('fixture:') && (
+          <a className="set-row nav" href={sheetViewUrl(sourceFromKey(s.id))} target="_blank" rel="noreferrer">
+            <span>Open the original sheet</span>
+            <IExternal size={16} />
+          </a>
+        )}
         <button
-          className="btn danger"
+          className="set-row nav danger-text"
           onClick={() => {
             overlay.closeSheet();
             const removed = store.remove(s.id);
             overlay.toast('Removed from your list.', removed ? { label: 'Undo', run: () => store.restore(removed) } : undefined);
           }}
         >
-          Remove from my list
+          <span>Remove from my tournaments</span>
         </button>
       </div>,
-      { title: sum?.title ?? 'Tournament' },
+      { title },
     );
   const p = sum?.primary;
   return (
@@ -128,17 +143,20 @@ function TournamentCard({ s, big }: { s: TournamentSettings; big?: boolean }) {
           {status}
           {sum && sum.problems > 0 && <span className="tag warn">Reading problems</span>}
         </div>
-        <b className="tcard-title">{sum?.title ?? 'Loading…'}</b>
+        <b className="tcard-title">{title}</b>
         <span className="muted small">
-          {dateRange(sum?.days.map((d) => d.date) ?? [])}
+          {sum ? dateRange(sum.days.map((d) => d.date)) : 'Tap to load it'}
           {sum?.divisions ? ` · ${plural(sum.divisions, 'division')}` : ''}
           {sum?.teams ? ` · ${plural(sum.teams, 'team')}` : ''}
         </span>
         {p?.next && (
           <span className="tcard-next">
-            <b>{withoutTag(p.team)}</b> next: {new Date(p.next.start).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })}
-            {p.next.pitch ? ` · P${p.next.pitch}` : ''}
-            {p.next.opponent ? ` · vs ${withoutTag(p.next.opponent)}` : ''} <span className="muted">({until(p.next.start, now)})</span>
+            <b>{withoutTag(p.team)}</b>
+            <span className="d tcard-time">{new Date(p.next.start).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })}</span>
+            {p.next.pitch && <PitchBadge label={p.next.pitch} size="sm" />}
+            {p.next.opponent ? <span>vs {withoutTag(p.next.opponent)}</span> : null}
+            <span style={{ flex: 1 }} />
+            <span className="tag soon sm">{until(p.next.start, now)}</span>
           </span>
         )}
         {p && !p.next && p.place && (
@@ -147,7 +165,7 @@ function TournamentCard({ s, big }: { s: TournamentSettings; big?: boolean }) {
           </span>
         )}
       </a>
-      <button className="ib" aria-label={`More for ${sum?.title ?? 'tournament'}`} onClick={menu}>
+      <button className="ib" aria-label={`More for ${title}`} onClick={menu}>
         <IMore />
       </button>
     </article>
@@ -158,16 +176,19 @@ function HomeEmpty() {
   return (
     <div className="page home-empty">
       <div className="home-head">
-        <h1>Follow a tournament</h1>
+        <Logo size={40} />
         <span style={{ flex: 1 }} />
         <a className="ib" href={href({ name: 'appSettings' })} aria-label="App settings">
           <ISettings />
         </a>
       </div>
+      <h1 className="hero-title">Follow a tournament</h1>
       <p className="lead">
         Paste the link to the tournament’s Google Sheet. You’ll see what’s on now and next, your team’s games, pool tables and brackets, all on this device.
       </p>
-      <AddForm />
+      <section className="card set-pad">
+        <AddForm />
+      </section>
       <DevFixtures />
     </div>
   );

@@ -18,6 +18,8 @@ interface SheetOpts {
   wide?: boolean;
   /** Full-screen on phones, top-anchored palette on desktop, no grab or header. */
   palette?: boolean;
+  /** Drops down under the header on desktop (switcher); a bottom sheet on phones. */
+  dropdown?: boolean;
 }
 
 const Ctx = createContext<OverlayApi>({ toast: () => {}, openSheet: () => {}, closeSheet: () => {} });
@@ -37,7 +39,7 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{ toast, openSheet, closeSheet }}>
       {children}
-      {sheet && <Sheet title={sheet.title} wide={sheet.wide} palette={sheet.palette} onClose={closeSheet}>{sheet.content}</Sheet>}
+      {sheet && <Sheet title={sheet.title} wide={sheet.wide} palette={sheet.palette} dropdown={sheet.dropdown} onClose={closeSheet}>{sheet.content}</Sheet>}
       <div className="toasts" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className="toast">
@@ -61,7 +63,7 @@ export function OverlayProvider({ children }: { children: ReactNode }) {
 }
 
 /** Bottom sheet on phones, centred modal on desktop. */
-export function Sheet({ title, wide, palette, onClose, children }: { title?: string; wide?: boolean; palette?: boolean; onClose: () => void; children: ReactNode }) {
+export function Sheet({ title, wide, palette, dropdown, onClose, children }: { title?: string; wide?: boolean; palette?: boolean; dropdown?: boolean; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
@@ -76,8 +78,8 @@ export function Sheet({ title, wide, palette, onClose, children }: { title?: str
     };
   }, [onClose]);
   return (
-    <div className={`scrim${palette ? ' top' : ''}`} onClick={onClose}>
-      <div className={`sheet${wide ? ' wide' : ''}${palette ? ' palette' : ''}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref} onClick={(e) => e.stopPropagation()}>
+    <div className={`scrim${palette ? ' top' : ''}${dropdown ? ' dropdown' : ''}`} onClick={onClose}>
+      <div className={`sheet${wide ? ' wide' : ''}${palette ? ' palette' : ''}${dropdown ? ' dropdown' : ''}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref} onClick={(e) => e.stopPropagation()}>
         {!palette && (
           <>
             <div className="sheet-grab" aria-hidden="true" />

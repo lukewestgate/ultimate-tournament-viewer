@@ -74,3 +74,9 @@ export function initials(name: string): string {
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + (words[words.length - 1].match(/^\d+$/) ? words[words.length - 1] : words[1][0])).slice(0, 3).toUpperCase();
 }
+
+/** A name for a saved tournament that hasn't been opened on this device yet. */
+export function fallbackTitle(id: string): string {
+  if (id.startsWith('fixture:')) return `Test workbook · ${id.slice(8)}`;
+  return `Google Sheet ···${id.slice(-4)}`;
+}

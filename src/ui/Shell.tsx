@@ -74,7 +74,7 @@ export function Header() {
         <a className="hdr-logo desk-only" href="#/" aria-label="All tournaments">
           <Logo />
         </a>
-        <button className="hdr-title" onClick={() => overlay.openSheet(<Switcher />, { title: 'Tournaments' })} aria-label={`${c.t.title}. Switch tournament`}>
+        <button className="hdr-title" onClick={() => overlay.openSheet(<Switcher />, { title: 'Tournaments', dropdown: true })} aria-label={`${c.t.title}. Switch tournament`}>
           <span className="hdr-name">
             <b>{c.t.title}</b>
             <IChevronDown size={14} strokeWidth={2.6} />

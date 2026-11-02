@@ -1,9 +1,9 @@
 import { store, useStore } from '../store/app';
 import { homeGroup, isOnToday } from '../store/launch';
-import { dateRange } from './fmt';
+import { dateRange, fallbackTitle } from './fmt';
 import { useOverlay } from './overlay';
 import { href, navigate, tHref } from './router';
-import { ICheck, IPlus, ISettings } from './icons';
+import { ICheck, IList, IPlus, ISettings } from './icons';
 import { useT } from './ctx';
 
 /** Tournament switcher (spec §9.3): current, others (live first), add, all, settings. */
@@ -20,6 +20,7 @@ export function Switcher() {
   };
   const statusOf = (s: (typeof saved)[number]) => {
     const g = homeGroup({ id: s.id, summary: s.summary, lastOpened: s.lastOpened }, now);
+    if (!s.summary) return 'Not opened yet';
     if (s.summary?.error) return "Can't load";
     if (g === 'onToday') return 'On today';
     if (g === 'datesUnconfirmed') return 'Dates not confirmed';
@@ -39,20 +40,20 @@ export function Switcher() {
         <button key={s.id} className="sw-row" onClick={() => go(tHref(s.id))}>
           {isOnToday(s.summary, now) ? <i className="li" /> : <span style={{ width: 18 }} />}
           <div className="sw-text">
-            <b>{s.summary?.title ?? 'Tournament'}</b>
+            <b>{s.summary?.title ?? fallbackTitle(s.id)}</b>
             <span className="muted">{statusOf(s)}</span>
           </div>
         </button>
       ))}
       <div className="sw-actions">
-        <button className="btn" onClick={() => go(href({ name: 'add' }))}>
-          <IPlus size={18} /> Add tournament
+        <button className="sw-row action" onClick={() => go(href({ name: 'add' }))}>
+          <IPlus size={18} /> <b>Add tournament</b>
         </button>
-        <button className="btn" onClick={() => go(href({ name: 'home' }))}>
-          All tournaments
+        <button className="sw-row action" onClick={() => go(href({ name: 'home' }))}>
+          <IList size={18} /> <b>All tournaments</b>
         </button>
-        <button className="btn" onClick={() => go(tHref(c.id, 'settings'))}>
-          <ISettings size={18} /> Settings
+        <button className="sw-row action" onClick={() => go(tHref(c.id, 'settings'))}>
+          <ISettings size={18} /> <b>How this sheet is read</b>
         </button>
       </div>
     </div>
