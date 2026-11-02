@@ -32,13 +32,6 @@ button.sw-row:hover { background: var(--surface2); }
 details.dev summary { cursor: pointer; font-weight: 600; color: var(--ink2); }
 
 /* ---------- game detail ---------- */
-.gd-teams { display: flex; flex-direction: column; gap: 6px; font-size: 18px; }
-.gd-side { display: flex; align-items: center; gap: 10px; }
-.gd-side > .tn { flex: 1; }
-.gd-side:not(.won) { color: var(--ink2); }
-.gd-score { font-size: 32px; }
-.gd-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.gd-time { font-size: 22px; font-weight: 700; }
 
 
 
@@ -48,13 +41,6 @@ details.dev summary { cursor: pointer; font-weight: 600; color: var(--ink2); }
 .info-lines p { margin: 8px 0 0; font-size: 14px; color: var(--ink2); white-space: pre-wrap; }
 
 /* ---------- what-if & replay ---------- */
-.wi { border: 1.5px dashed var(--whatif); background: var(--whatif-soft); box-shadow: none; }
-.wi-team { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); text-align: left; width: 100%; }
-.wi-team.on { border: 1.5px dashed var(--whatif); background: var(--surface); }
-.steppers { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.stepper { display: flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.stepper input { width: 46px; text-align: center; border: 0; background: transparent; font-size: 26px; font-weight: 700; }
-.stepper .ib { font-size: 22px; font-weight: 700; }
 td.up { color: var(--win); }
 td.down { color: var(--live); }
 .replay-wrap { display: flex; flex-direction: column; gap: 6px; }

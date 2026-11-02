@@ -1,0 +1,47 @@
+/* ---------- Game detail sheet and what-if controls (SpecGame, SpecComponents) ---------- */
+.gd { display: flex; flex-direction: column; gap: 14px; }
+.gd-head { display: flex; align-items: center; gap: 10px; min-height: 36px; padding-right: 40px; }
+.gd-title { font-size: 15px; font-weight: 700; }
+.gd-when { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.gd-time { font-size: 52px; font-weight: 700; line-height: 1; letter-spacing: -.01em; }
+.gd-teams { display: flex; flex-direction: column; gap: 4px; }
+.gd-side { display: flex; align-items: center; gap: 10px; min-height: 52px; font-size: 22px; }
+.gd-side > :first-child { flex: 1; min-width: 0; }
+.gd-side .tn-name { font-weight: 500; }
+.gd-side.won .tn-name { font-weight: 700; }
+.gd-side.lost { color: var(--ink2); }
+.gd-teams.small .gd-side { min-height: 36px; font-size: 19px; }
+.gd-score { font-size: 46px; line-height: 1; }
+.gd-side.lost .gd-score { color: var(--ink2); }
+.gd-standing { font-size: 13px; color: var(--ink3); white-space: nowrap; }
+.gd-progress { display: flex; align-items: center; gap: 12px; }
+.gd-progress .cap-track { flex: 1; }
+.stake-box { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 14px; background: var(--surface2); }
+.stake-box .stake-row { font-size: 14px; line-height: 1.4; }
+.gd-earlier { display: flex; flex-direction: column; gap: 6px; }
+.gd-meet { display: flex; align-items: center; gap: 12px; min-height: 32px; font-size: 14px; }
+.gd-meet > .muted { width: 72px; flex: none; }
+.gd-meet-what { flex: 1; min-width: 0; }
+.gd-actions { display: flex; gap: 10px; }
+.gd-actions > .btn { flex: 1; min-height: 48px; font-weight: 700; justify-content: center; }
+.gd-link { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; min-height: 40px; color: var(--accent); font-weight: 600; }
+
+.sheet-head.bare { position: absolute; top: 12px; right: 10px; padding: 0; min-height: 0; z-index: 2; }
+.sheet { position: relative; }
+
+.wic { display: flex; flex-direction: column; gap: 12px; }
+.wic.card { border: 1.5px dashed var(--whatif); background: var(--whatif-soft); box-shadow: none; }
+.wic-head { display: flex; align-items: center; }
+.wic-teams { display: flex; flex-direction: column; gap: 6px; }
+.wic-team { display: flex; align-items: center; gap: 10px; min-height: 56px; }
+.wic-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-size: 18px; }
+button.wic-name { min-height: 52px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); text-align: left; color: var(--ink); }
+.wic-team.on button.wic-name { border: 1.5px dashed var(--whatif); background: var(--whatif-soft); }
+.wic-name > :first-child { flex: 1; min-width: 0; }
+.wic .stepper input { width: 44px; font-size: 26px; }
+.switch-row { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink2); cursor: pointer; }
+.if-box { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-radius: 14px; background: var(--whatif-soft); }
+.if-box .lbl { color: var(--whatif); }
+.if-row { display: flex; gap: 12px; font-size: 14px; line-height: 1.4; }
+.if-row > b { width: 40px; flex: none; font-size: 16px; }
+.if-good { color: var(--win); }

@@ -72,7 +72,7 @@ export function Sheet({ title, wide, onClose, children }: { title?: string; wide
     <div className="scrim" onClick={onClose}>
       <div className={`sheet${wide ? ' wide' : ''}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-grab" aria-hidden="true" />
-        <div className="sheet-head">
+        <div className={`sheet-head${title ? '' : ' bare'}`}>
           {title && <h2>{title}</h2>}
           <span style={{ flex: 1 }} />
           <button className="ib" onClick={onClose} aria-label="Close">

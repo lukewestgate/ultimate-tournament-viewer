@@ -5,8 +5,8 @@ import { withoutTag } from '../../extract/names';
 
 const CAP = 25;
 
-/** What-if controls for one game (spec §10.2). */
-export function WhatIfControls({ id }: { id: string }) {
+/** What-if controls for one game (spec §10.2; SpecGame #3, SpecComponents). */
+export function WhatIfControls({ id, sheet }: { id: string; sheet?: boolean }) {
   const c = useT();
   const v = c.view.byId.get(id);
   if (!v || v.g.isBye) return null;
@@ -21,15 +21,23 @@ export function WhatIfControls({ id }: { id: string }) {
     else delete s[id];
     c.setScenario(s);
   };
+  const overrideToggle = (on: boolean) => (
+    <label className="switch-row">
+      <input
+        className="switch"
+        type="checkbox"
+        role="switch"
+        checked={on}
+        onChange={(e) => (e.target.checked ? set({ outcome: v.result!.outcome === 'A' ? 'B' : 'A', override: true }) : set(undefined))}
+      />
+      <span>Override the real result {on ? '(on)' : '(off)'}</span>
+    </label>
+  );
   if (real && !h?.override) {
     return (
-      <div className="wi card pad stack">
-        <span className="lbl">What-if</span>
+      <div className={`wic${sheet ? ' in-sheet' : ' card pad'}`}>
         <span className="small muted">This game has a real result, which stays fixed.</span>
-        <label className="toggle">
-          <input type="checkbox" onChange={(e) => e.target.checked && set({ outcome: v.result!.outcome === 'A' ? 'B' : 'A', override: true })} />
-          Override the real result
-        </label>
+        {overrideToggle(false)}
       </div>
     );
   }
@@ -40,23 +48,29 @@ export function WhatIfControls({ id }: { id: string }) {
   const sb = h?.sb;
   const setScore = (na: number, nb: number) => {
     const o = na > nb ? 'A' : nb > na ? 'B' : 'D';
-    if (o === 'D' && !draws) return;
+    if (o === 'D' && !draws) {
+      set({ outcome: h?.outcome ?? 'A', sa: na, sb: nb, override: h?.override });
+      return;
+    }
     set({ outcome: o, sa: na, sb: nb, override: h?.override });
   };
   return (
-    <div className="wi card pad stack">
-      <div style={{ display: 'flex', alignItems: 'center' }}>
-        <span className="lbl">What-if{h?.override ? ' · overriding the real result' : ''}</span>
-        <span style={{ flex: 1 }} />
-        {h && (
-          <button className="btn small" onClick={() => set(undefined)}>
-            Clear
-          </button>
-        )}
-      </div>
-      {isPool ? (
+    <div className={`wic${sheet ? ' in-sheet' : ' card pad'}`}>
+      {!sheet && (
+        <div className="wic-head">
+          <span className="lbl">What-if{h?.override ? ' · overriding the real result' : ''}</span>
+          <span style={{ flex: 1 }} />
+          {h && (
+            <button className="btn small" onClick={() => set(undefined)}>
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+      {isPool && (
         <Seg
           label="Result"
+          className="violet"
           value={outcome}
           options={[
             { value: 'A', label: `${nameA} win` },
@@ -65,35 +79,31 @@ export function WhatIfControls({ id }: { id: string }) {
           ]}
           onChange={(o) => set({ outcome: o as Hypo['outcome'], override: h?.override })}
         />
-      ) : (
-        <div className="stack" style={{ gap: 6 }}>
-          <span className="small muted">Tap a team to make it the winner.</span>
-          {([0, 1] as const).map((i) => {
-            const on = (i === 0 && outcome === 'A') || (i === 1 && outcome === 'B');
-            return (
-              <button key={i} className={`wi-team${on ? ' on' : ''}`} aria-pressed={on} onClick={() => set({ outcome: i === 0 ? 'A' : 'B', override: h?.override })}>
-                <Side side={v.sides[i]} division={v.g.division} plain />
-                {on && <span className="tag if">IF W</span>}
-              </button>
-            );
-          })}
-        </div>
       )}
-      <div className="stack" style={{ gap: 6 }}>
-        <span className="small muted">Exact score {isPool ? '(matters for difference and points-scored tie-breaks)' : '(optional; shown in the bracket)'}</span>
-        <div className="steppers">
-          <Stepper label={nameA} value={sa} onChange={(n) => setScore(n, sb ?? 0)} />
-          <span className="muted">–</span>
-          <Stepper label={nameB} value={sb} onChange={(n) => setScore(sa ?? 0, n)} />
-        </div>
-        {h && sa === undefined && <span className="small muted">Result only: tie-breaks that need scores show “depends on scores”.</span>}
+      {!isPool && <span className="small muted">Tap a team to make it the winner.</span>}
+      <div className={`wic-teams${isPool ? '' : ' bracket'}`}>
+        {([0, 1] as const).map((i) => {
+          const won = (i === 0 && outcome === 'A') || (i === 1 && outcome === 'B');
+          const name = <Side side={v.sides[i]} division={v.g.division} bold={won} />;
+          return (
+            <div key={i} className={`wic-team${won ? ' on' : ''}`}>
+              {isPool ? (
+                <span className="wic-name">{name}</span>
+              ) : (
+                <button className="wic-name" aria-pressed={won} onClick={() => set({ outcome: i === 0 ? 'A' : 'B', sa, sb, override: h?.override })}>
+                  {name}
+                  {won && <span className="tag if sm">IF W</span>}
+                </button>
+              )}
+              <Stepper label={i === 0 ? nameA : nameB} value={i === 0 ? sa : sb} onChange={(n) => (i === 0 ? setScore(n, sb ?? 0) : setScore(sa ?? 0, n))} />
+            </div>
+          );
+        })}
       </div>
-      {real && (
-        <label className="toggle">
-          <input type="checkbox" checked={Boolean(h?.override)} onChange={(e) => !e.target.checked && set(undefined)} />
-          Override the real result
-        </label>
-      )}
+      <span className="small muted">
+        {isPool ? 'Score is optional. Without one, tie-breaks that need scores show “depends on scores”.' : 'Score is optional; it’s shown in the bracket.'}
+      </span>
+      {real && overrideToggle(true)}
     </div>
   );
 }
