@@ -10,7 +10,6 @@ import { parseTeamKey, teamKey } from '../store/settings';
 import { problemsOnly } from '../extract/quality';
 import { FETCH_ERROR_TEXT } from '../sheets/fetch';
 import { Switcher } from './Switcher';
-import { openSearch } from './screens/Search';
 import { encodeScenario } from '../engine/scenario';
 import { ReplayBar, ReplayDock } from './screens/Replay';
 import { divKey } from '../model/types';
@@ -32,6 +31,11 @@ function useOnline() {
 }
 
 /** App mark: a pitch with a disc. */
+/** The search panel is loaded on first use to keep it out of the main bundle. */
+function openSearch(overlay: ReturnType<typeof useOverlay>, c: ReturnType<typeof useT>) {
+  void import('./screens/Search').then((m) => m.openSearch(overlay, c));
+}
+
 export function Logo({ size = 36 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden="true" className="logo">

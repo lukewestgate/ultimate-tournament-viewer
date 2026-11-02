@@ -148,3 +148,17 @@
 .set-row > .mini-field:first-child { flex: none; }
 .set-row > .mini-field + .small { flex: 1; }
 .sub-shell:has(.sub-main.wide) .sub-hdr-row { max-width: 1200px; }
+table.cmp { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.cmp th, table.cmp td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+table.cmp thead th { font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: .06em; }
+table.cmp tr.muted td { color: var(--ink3); }
+.sheet-preview { overflow: auto; max-height: 60vh; }
+.sheet-preview table { border-collapse: collapse; font-size: 12px; }
+.sheet-preview th { position: sticky; top: 0; background: var(--surface2); color: var(--ink3); font-weight: 600; padding: 4px 6px; border: 1px solid var(--line); z-index: 1; min-width: 40px; }
+.sheet-preview tbody th { left: 0; z-index: 2; padding: 0; }
+.sheet-preview td { border: 1px solid var(--line); padding: 4px 6px; white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 40px; height: 32px; }
+.sheet-preview td:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sheet-preview td.sel { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+.sheet-preview tr.hdr-row-m td { border-bottom: 2px solid var(--ink); font-weight: 700; }
+.row-num { border: 0; background: transparent; width: 100%; min-height: 32px; color: var(--ink3); font-weight: 600; }
+.row-num:hover { background: var(--accent-soft); color: var(--accent); }

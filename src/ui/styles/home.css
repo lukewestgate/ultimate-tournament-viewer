@@ -38,3 +38,8 @@ button.sw-row:hover { background: var(--surface2); }
 .picker-search { position: sticky; top: 0; z-index: 1; }
 .card.list.flat { box-shadow: none; border: 1px solid var(--line); }
 .follow-row + .follow-row { border-top: 1px solid var(--line); }
+.paste-row { display: flex; gap: 8px; }
+.paste-row .field { flex: 1; min-width: 0; }
+.warnbox { display: flex; gap: 10px; padding: 12px; border-radius: 12px; background: var(--draft); color: var(--draft-ink); font-size: 14px; }
+.warnbox ul { margin: 4px 0 0; padding-left: 18px; }
+details.dev summary { cursor: pointer; font-weight: 600; color: var(--ink2); }
