@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { store, useStore } from '../store/app';
 import { launchTarget } from '../store/launch';
 import { parseSheetLink, sourceKey } from '../sheets/links';
@@ -9,6 +9,7 @@ import { OverlayProvider, useOverlay } from './overlay';
 import { TournamentProvider, useT } from './ctx';
 import { TournamentShell } from './Shell';
 import { screens } from './screens';
+import { PwaPrompts } from './Pwa';
 
 function useTheme() {
   const s = useStore();
@@ -78,6 +79,7 @@ function Root() {
   return (
     <>
       <Launch />
+      <PwaPrompts />
       <RouteView route={route} />
     </>
   );
@@ -90,7 +92,11 @@ function RouteView({ route }: { route: Route }) {
     case 'add':
       return <screens.Add />;
     case 'appSettings':
-      return <screens.AppSettings />;
+      return (
+        <Suspense fallback={<Loading text="Loading…" />}>
+          <screens.AppSettings />
+        </Suspense>
+      );
     case 'tournament':
       return (
         <TournamentProvider key={route.id} id={route.id} fallback={(rt) => <TournamentLoading rt={rt} />}>
@@ -111,7 +117,9 @@ function TournamentScreen({ route }: { route: Extract<Route, { name: 'tournament
   const S = screens.tournament[route.tab] ?? screens.tournament.now;
   return (
     <TournamentShell>
-      <S arg={route.arg} />
+      <Suspense fallback={<div className="spinner" style={{ margin: '40px auto' }} />}>
+        <S arg={route.arg} />
+      </Suspense>
     </TournamentShell>
   );
 }

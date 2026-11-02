@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import { lazy, type ComponentType } from 'react';
 import type { TournamentTab } from '../router';
 import { Home } from './Home';
 import { Add } from './Add';
@@ -9,17 +9,17 @@ import { Team } from './Team';
 import { Pools } from './Pools';
 import { Brackets, StandingsScreen } from './Brackets';
 import { Info } from './Info';
-import { WhatIf } from './WhatIf';
-import { Settings } from './Settings';
-import { AppSettings } from './AppSettings';
-import { Diagnostics } from './Diagnostics';
-import { Manual } from './Manual';
-import { FormatEditor } from './FormatEditor';
+const WhatIf = lazy(() => import('./WhatIf').then((m) => ({ default: m.WhatIf })));
+const Settings = lazy(() => import('./Settings').then((m) => ({ default: m.Settings })));
+const AppSettings = lazy(() => import('./AppSettings').then((m) => ({ default: m.AppSettings })));
+const Diagnostics = lazy(() => import('./Diagnostics').then((m) => ({ default: m.Diagnostics })));
+const Manual = lazy(() => import('./Manual').then((m) => ({ default: m.Manual })));
+const FormatEditor = lazy(() => import('./FormatEditor').then((m) => ({ default: m.FormatEditor })));
 
+// Rarely used screens are split out of the main bundle.
 export interface ScreenProps {
   arg?: string;
 }
-
 
 export const screens: {
   Home: ComponentType;
