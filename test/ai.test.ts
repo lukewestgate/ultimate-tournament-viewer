@@ -43,6 +43,17 @@ describe('AI mapper', () => {
     expect(parsed.mapping!.corrections.ignoreRows).toEqual(['Gamelist!4']);
   });
 
+  it('keeps engine levels and hand-set rules, and takes valid rules from the AI', () => {
+    const base = { ...good, engineLevel: { '': 'basic' as const } };
+    const aiRules = { points: { win: 2, draw: 1, loss: 0 }, tiebreaks: ['h2hWins', 'nonsense', 'diff'], drawsAllowed: { pool: false } };
+    const parsed = parseMappingReply(JSON.stringify({ mapping: { ...good, rules: aiRules } }), wb, base).mapping!;
+    expect(parsed.engineLevel).toEqual({ '': 'basic' });
+    expect(parsed.rules).toMatchObject({ points: { win: 2, draw: 1, loss: 0 }, tiebreaks: ['h2hWins', 'diff'], drawsAllowed: { pool: false, placement: false }, source: 'ai' });
+    const mine = { points: { win: 3, draw: 1, loss: 0 }, tiebreaks: [], drawsAllowed: { pool: true, placement: false }, source: 'user' as const };
+    expect(parseMappingReply(JSON.stringify({ mapping: { ...good, rules: aiRules } }), wb, { ...base, rules: mine }).mapping!.rules).toBe(mine);
+    expect(parseMappingReply(JSON.stringify({ mapping: { ...good, rules: { points: 'lots' } } }), wb, base).mapping!.rules).toBe(base.rules);
+  });
+
   it('an invalid reply is sent back once, then a better mapping is offered', async () => {
     const { fetcher, calls } = fakeModel(['not json at all', JSON.stringify({ mapping: good, notes: ['Gamelist and Finals'] })]);
     const p = await improveMapping({ wb, current: broken, id: 'x', title: 'Pitch Hog', call: { key: 'k', fetcher } });

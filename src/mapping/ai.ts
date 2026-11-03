@@ -94,8 +94,10 @@ Mapping = {
  "seeding": [{"tab","firstRow","lastRow","seedCol","teamCol","label"?}],
  "standings": [{"tab","firstRow","lastRow","placeCol","teamCol","label"?}],
  "info": string[],        // tabs holding rules text
- "corrections": Corrections
+ "corrections": Corrections,
+ "rules"?: {"points":{"win","draw","loss"},"tiebreaks":Tiebreak[],"drawsAllowed":{"pool":bool,"placement":bool},"rankBy"?:"points"|"wins"}  // only if the sheet states them
 }
+Tiebreak = ${ALL_TIEBREAKS.join(' | ')}  // in order of use; "h2h…" = among the tied teams, "common…" = vs common opponents
 Corrections = {"dates":{day:"yyyy-mm-dd"},"gameLength":{day:minutes},"delays":{},"aliases":{otherSpelling:canonical},"divisionNames":{raw:display},
  "teamDivisions"?:{team:division},   // move a team the app grouped wrongly; "Men's::KCL 1" moves only the copy read into Men's
  "gameDivisions"?:{gameRef:division}, // e.g. {"Gamelist!284":"Women's"} for games the app left in no division
@@ -352,6 +354,23 @@ function cleanCorrections(c: Mapping['corrections']): Mapping['corrections'] {
   };
 }
 
+/** Points, tie-breaks and draws from the model's JSON, or undefined when there's no usable points table. */
+function cleanRules(x: unknown): Rules | undefined {
+  const o = (x && typeof x === 'object' ? x : {}) as Partial<Rules>;
+  if (!o.points || typeof o.points.win !== 'number') return undefined;
+  const tbs = (Array.isArray(o.tiebreaks) ? o.tiebreaks : []).filter((t): t is Tiebreak => ALL_TIEBREAKS.includes(t as Tiebreak));
+  const num = (n: unknown, d: number) => (typeof n === 'number' && Number.isFinite(n) ? n : d);
+  const da = o.drawsAllowed && typeof o.drawsAllowed === 'object' ? o.drawsAllowed : undefined;
+  return {
+    points: { win: o.points.win, draw: num(o.points.draw, 1), loss: num(o.points.loss, 0) },
+    tiebreaks: [...new Set(tbs)],
+    drawsAllowed: { pool: da?.pool ?? true, placement: da?.placement ?? false },
+    rankBy: o.rankBy === 'wins' || o.rankBy === 'points' ? o.rankBy : undefined,
+    source: 'ai',
+    preset: 'custom',
+  };
+}
+
 /** Validate the AI's reply as a mapping. Returns errors (empty when usable). */
 export function parseMappingReply(text: string, wb: Workbook, base: Mapping): { mapping?: Mapping; errors: string[] } {
   let obj: unknown;
@@ -371,7 +390,9 @@ export function parseMappingReply(text: string, wb: Workbook, base: Mapping): { 
     standings: Array.isArray(m.standings) ? m.standings : [],
     info: Array.isArray(m.info) ? m.info.filter((x) => typeof x === 'string') : base.info,
     corrections: cleanCorrections({ ...emptyCorrections(), ...base.corrections, ...(m.corrections ?? {}) }),
-    rules: base.rules,
+    // Rules the user set by hand stay; otherwise the AI may propose them.
+    rules: base.rules?.source === 'user' ? base.rules : (cleanRules(m.rules) ?? base.rules),
+    engineLevel: base.engineLevel,
     template: base.template,
     notes: Array.isArray((obj as { notes?: unknown }).notes) ? ((obj as { notes: string[] }).notes as string[]).slice(0, 5) : undefined,
   };
@@ -477,13 +498,9 @@ export async function aiRules(call: AiCall, infoText: string, onProgress?: (p: A
     const sent = messages.reduce((n, m) => n + m.content.length, 0);
     const { text, usage } = await callModel(withPhases(call, onProgress, { attempt: 1, sent }), messages, { maxTokens: 8000 });
     onProgress?.({ phase: 'checking', attempt: 1, sent, thinking: 0, writing: text.length });
-    const o = extractJson(text) as Partial<Rules>;
-    const tbs = (o.tiebreaks ?? []).filter((x): x is Tiebreak => ALL_TIEBREAKS.includes(x as Tiebreak));
-    if (!o.points || typeof o.points.win !== 'number') return { error: 'The answer had no points for a win, draw and loss.', errorKind: 'reply', usage };
-    return {
-      rules: { points: { win: o.points.win, draw: o.points.draw ?? 1, loss: o.points.loss ?? 0 }, tiebreaks: tbs, drawsAllowed: o.drawsAllowed ?? { pool: true, placement: false }, source: 'ai', preset: 'custom' },
-      usage,
-    };
+    const rules = cleanRules(extractJson(text));
+    if (!rules) return { error: 'The answer had no points for a win, draw and loss.', errorKind: 'reply', usage };
+    return { rules, usage };
   } catch (e) {
     return { error: (e as Error).message, errorKind: errorKind(e) };
   }
