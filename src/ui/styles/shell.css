@@ -107,6 +107,7 @@ select.chip { appearance: none; padding-right: 30px; background-image: linear-gr
 .bn.ann { background: var(--accent); color: var(--accent-ink); }
 .bn.problems { background: color-mix(in srgb, var(--draft) 55%, var(--bg)); color: var(--draft-ink); }
 .bn.problems .bn-solid { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+.bn.problems .bn-solid.ai { background: var(--whatif); color: #fff; border-color: var(--whatif); }
 .bn.grey { background: var(--surface2); color: var(--ink2); }
 .bn.grey .bn-solid { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
 

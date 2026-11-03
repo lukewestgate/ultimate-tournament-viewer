@@ -100,6 +100,7 @@ export const IClock = make(<path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5
 export const IList = make(<path d="M4 5h16v5H4zM4 14h16v5H4z" />);
 export const ISliders = make(<path d="M4 7h10M18 7h2M14 5v4M4 17h4M12 17h8M8 15v4" />);
 export const ICheck = make(<path d="M5 12l5 5L20 7" />);
+export const ISparkle = make(<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z" />);
 export const IPlay = make(<path d="M7 4l13 8-13 8z" />);
 export const IPause = make(<path d="M8 4v16M16 4v16" />);
 export const IExternal = make(<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />);

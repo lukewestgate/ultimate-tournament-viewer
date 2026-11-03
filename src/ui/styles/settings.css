@@ -201,3 +201,9 @@ table.cmp tr.down td:last-child { color: var(--error); font-weight: 700; }
 .key-checks li.bad { color: var(--error); }
 .kc-mark { flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: var(--win); color: #fff; font-size: 12px; font-weight: 800; margin-top: 1px; }
 .key-checks li.bad .kc-mark { background: var(--error); }
+
+/* One-tap AI entry: on the add preview, the settings page and the manual editor. */
+.ai-cta { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 16px; background: var(--whatif-soft); color: var(--ink); }
+.ai-cta-head { display: flex; align-items: center; gap: 8px; color: var(--whatif); font-weight: 700; }
+.ai-cta p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink2); }
+.ai-cta .btn { align-self: stretch; }

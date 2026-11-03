@@ -30,7 +30,7 @@ import {
   setSeeding,
 } from '../../mapping/manual';
 import { shareLink, copyOrShare } from '../mappingEdit';
-import { AiRun } from './Settings';
+import { useOpenAi } from '../AiCta';
 import { timeOf } from '../fmt';
 import type { ScreenProps } from './index';
 
@@ -42,6 +42,7 @@ const MAX_COLS = 40;
 export function Manual(_: ScreenProps) {
   const c = useT();
   const overlay = useOverlay();
+  const openAi = useOpenAi();
   const wb = c.rt.workbook;
   const [draft, setDraft] = useState<Mapping>(() => JSON.parse(JSON.stringify(c.p.mapping)));
   const visible = wb?.tabs.filter((t) => !t.hidden) ?? [];
@@ -402,7 +403,7 @@ export function Manual(_: ScreenProps) {
             <a className="btn" href={tHref(c.id, 'settings')}>
               Corrections
             </a>
-            <button className="btn violet-text" onClick={() => (store.app.aiKey ? overlay.openSheet(<AiRun />, { title: 'Improve with AI' }) : overlay.toast('Add an OpenRouter key in App settings first.'))}>
+            <button className="btn violet-text" onClick={openAi}>
               Improve with AI
             </button>
           </div>

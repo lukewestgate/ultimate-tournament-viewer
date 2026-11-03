@@ -11,6 +11,7 @@ import { dateLabel, plural } from '../fmt';
 import { IWarn } from '../icons';
 import { useOverlay } from '../overlay';
 import { TeamPicker } from '../TeamPicker';
+import { AiCta } from '../AiCta';
 
 /** Paste field with validation as you type, and a paste button where allowed. */
 export function AddForm({ onSubmit }: { onSubmit?: (id: string) => void }) {
@@ -139,15 +140,11 @@ function Preview() {
     return (
       <div className="card pad stack">
         <h2>No games found</h2>
-        <p className="muted">We opened “{t.title}” but couldn’t find the games. You can show us where they are, or let AI have a go.</p>
-        <div className="row-btns">
-          <a className="btn primary" href={tHref(c.id, 'manual')}>
-            Map it by hand
-          </a>
-          <a className="btn" href={tHref(c.id, 'settings')}>
-            Improve with AI
-          </a>
-        </div>
+        <p className="muted">We opened “{t.title}” but couldn’t find the games. Let AI have a go, or show us where they are.</p>
+        <AiCta noGames />
+        <a className="btn" href={tHref(c.id, 'manual')}>
+          Map it by hand
+        </a>
       </div>
     );
   }
@@ -186,6 +183,7 @@ function Preview() {
             </div>
           </div>
         )}
+        {problems.length > 0 && <AiCta problems={problems.length} />}
         <a className="btn primary block big" href={tHref(c.id)}>
           Open
         </a>
@@ -197,6 +195,7 @@ function Preview() {
             Check how it’s read
           </a>
         </div>
+        {problems.length === 0 && <AiCta />}
       </div>
     </div>
   );

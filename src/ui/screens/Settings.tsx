@@ -14,6 +14,7 @@ import { AiSteps, AiTask, UsageLine } from '../AiTask';
 import { describeSource } from './FormatEditor';
 import { teamKey } from '../../store/settings';
 import { IChevronRight, IChevronDown } from '../icons';
+import { AiCta } from '../AiCta';
 import { dateLabel } from '../fmt';
 import type { ScreenProps } from './index';
 
@@ -87,6 +88,8 @@ function SettingsPage() {
           ))}
         </section>
       )}
+
+      <AiCta problems={problems.length} />
 
       <span className="lbl-head">Quick corrections</span>
       <section className="card set-list">
@@ -208,7 +211,6 @@ function SettingsPage() {
           <span>Edit manually</span>
           <IChevronRight size={18} />
         </a>
-        <AiButton />
         <button
           className="set-row nav"
           onClick={() => {
@@ -461,33 +463,18 @@ function RulesPage() {
   );
 }
 
-function AiButton() {
-  const overlay = useOverlay();
-  return (
-    <button
-      className="set-row nav violet-text"
-      onClick={() => {
-        if (!store.app.aiKey) return overlay.toast('Add an OpenRouter key in App settings first.');
-        overlay.openSheet(<AiRun />, { title: 'Improve with AI' });
-      }}
-    >
-      <span>Improve with AI</span>
-      <IChevronRight size={18} />
-    </button>
-  );
-}
-
 /** Runs the AI mapper, then the rules and format jobs, and shows the before/after comparison; never applies silently. */
-export function AiRun() {
+export function AiRun({ autoStart = false }: { autoStart?: boolean }) {
   const c = useT();
   const overlay = useOverlay();
+  const note = (
+    <p className="small muted" style={{ margin: 0 }}>
+      The first rows of each visible tab and the current reading are sent to OpenRouter with your key. The AI can ask to see more of the sheet and test its ideas before answering, then reads the rules and works out how teams progress. Only a description of where things are comes back; you choose whether to use it. Usually a cent or two.
+    </p>
+  );
   return (
     <AiTask
-      intro={
-        <p className="small muted" style={{ margin: 0 }}>
-          The first rows of each visible tab and the current reading are sent to OpenRouter with your key. The AI can ask to see more of the sheet and test its ideas before answering, then reads the rules and works out how teams progress. Only a description of where things are comes back; you choose whether to use it. Usually a cent or two.
-        </p>
-      }
+      intro={autoStart ? undefined : note}
       typical="This usually takes 1–3 minutes: the AI looks around the sheet and tests its mapping before answering."
       slowAfter={240_000}
       run={({ call, onProgress }) => {

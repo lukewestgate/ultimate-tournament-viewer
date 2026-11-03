@@ -14,6 +14,7 @@ import { encodeScenario } from '../engine/scenario';
 import { ReplayBar, ReplayDock } from './screens/Replay';
 import { divKey } from '../model/types';
 import { DivisionPicker } from './DivisionPicker';
+import { useOpenAi } from './AiCta';
 
 function useOnline() {
   const [on, setOn] = useState(() => navigator.onLine);
@@ -196,6 +197,7 @@ export function TabBar() {
 export function Banners() {
   const c = useT();
   const overlay = useOverlay();
+  const openAi = useOpenAi();
   const online = useOnline();
   const dismissed = new Set(c.settings.dismissed ?? []);
   const dismiss = (k: string) => store.update(c.id, { dismissed: [...dismissed, k] });
@@ -258,6 +260,11 @@ export function Banners() {
       <div key="problems" className="bn problems">
         <IWarn size={18} />
         <span className="bn-text">Some of this schedule may be read wrongly</span>
+        {store.app.aiKey && (
+          <button className="bn-solid ai" onClick={openAi}>
+            Fix with AI
+          </button>
+        )}
         <button className="bn-solid" onClick={() => navigate(tHref(c.id, 'settings'))}>
           Check
         </button>
