@@ -29,6 +29,7 @@ describe('AI mapper', () => {
     expect(size).toBeLessThan(120000); // ~16k tokens at most
     expect(sampleWorkbook(wb)).toContain('E5: Flyght Club Open');
     expect(sampleWorkbook(wb)).toContain('Hidden tabs (not shown): Options');
+    expect(sampleWorkbook(wb, 20)).toMatch(/\(tab is \d+ rows x \d+ columns; only the first 20 rows x \d+ columns are shown\)/);
   });
 
   it('the prompt shows what the current mapping reads, and junk overrides are dropped', () => {
@@ -36,7 +37,12 @@ describe('AI mapper', () => {
     const m = detectMapping(wb2).mapping;
     const t = extract(wb2, m, { id: 'x', sheetUrl: '' });
     const msgs = buildMappingPrompt(wb2, 'x', m, stats(t, m, wb2), t);
-    expect(msgs[1].content).toMatch(/What the current mapping reads:\nDivision "Open" \(code O\): \d+ games, \d+ teams: .*\(seed 1\)/);
+    const c = msgs[1].content;
+    expect(c).toMatch(/What the current mapping reads:\nGames by tab: "Gamelist" 40 \(sheet rows 2–41\)/);
+    expect(c).toMatch(/\nDivision "Open" \(code O\): \d+ games, \d+ teams: .*\(seed 1\)/);
+    expect(c).toMatch(/Days: "Saturday" 2026-09-19 \(date sheet\), 40 games, 30 min games every 40 min/);
+    expect(c).toMatch(/Pool "K" \(Women\) pool: 3 slots: .* \| sheet table: .*6pts/);
+    expect(c).toContain('Possibly the same team (add an alias if so): "Gateways" → "Gateways U20" in Women');
     const reply = JSON.stringify({ mapping: { ...m, corrections: { teamDivisions: { a: 'Women', b: 3 }, ignoreRows: ['Gamelist!4', 7] } } });
     const parsed = parseMappingReply(reply, wb2, m);
     expect(parsed.mapping!.corrections.teamDivisions).toEqual({ a: 'Women' });
