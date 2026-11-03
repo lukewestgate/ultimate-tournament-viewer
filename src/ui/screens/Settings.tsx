@@ -10,7 +10,7 @@ import { mergeSuggestions } from '../../extract/quality';
 import { pointsDiffPreset, ukuPreset, TIEBREAK_LABEL, ALL_TIEBREAKS, UNCOMPUTABLE } from '../../engine/rulesPresets';
 import { divKey, type EngineLevel, type Rules } from '../../model/types';
 import { improveMapping, aiRules, aiFormat } from '../../mapping/ai';
-import { AiTask, UsageLine } from '../AiTask';
+import { AiSteps, AiTask, UsageLine } from '../AiTask';
 import { describeSource } from './FormatEditor';
 import { teamKey } from '../../store/settings';
 import { IChevronRight, IChevronDown } from '../icons';
@@ -485,12 +485,14 @@ export function AiRun() {
     <AiTask
       intro={
         <p className="small muted" style={{ margin: 0 }}>
-          The first rows of each visible tab and the current reading are sent to OpenRouter with your key. Only a description of where things are comes back; you choose whether to use it. Usually well under a cent.
+          The first rows of each visible tab and the current reading are sent to OpenRouter with your key. The AI can ask to see more of the sheet and test its ideas before answering. Only a description of where things are comes back; you choose whether to use it. Usually about a cent.
         </p>
       }
+      typical="This usually takes 1–3 minutes: the AI looks around the sheet and tests its mapping before answering."
+      slowAfter={240_000}
       run={({ call, onProgress }) => {
         const wb = c.rt.workbook;
-        if (!wb) return Promise.resolve({ before: { games: 0, withTeams: 0, teams: 0, days: 0, divisions: 0, pools: 0, problems: [], aliases: 0 }, better: false, usage: { promptTokens: 0, completionTokens: 0, cost: 0 }, attempts: 0, error: 'The sheet isn’t loaded yet. Wait for it to open, then try again.', errorKind: 'reply' as const });
+        if (!wb) return Promise.resolve({ before: { games: 0, withTeams: 0, teams: 0, days: 0, divisions: 0, pools: 0, problems: [], aliases: 0 }, better: false, usage: { promptTokens: 0, completionTokens: 0, cost: 0 }, attempts: 0, steps: [], error: 'The sheet isn’t loaded yet. Wait for it to open, then try again.', errorKind: 'reply' as const });
         return improveMapping({ wb, current: c.p.mapping, id: c.id, title: c.t.title, call, onProgress });
       }}
       done={(p, { ms }) => {
@@ -535,6 +537,7 @@ export function AiRun() {
                 </ul>
               </div>
             ) : null}
+            {p.steps.length > 0 && <AiSteps steps={p.steps} />}
             {p.mapping?.notes?.length ? (
               <div className="ai-notes">
                 <b className="small">AI’s notes</b>

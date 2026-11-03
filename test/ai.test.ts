@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildMappingPrompt, callModel, improveMapping, parseMappingReply, sampleWorkbook, stats, type AiProgress } from '../src/mapping/ai';
+import { buildMappingPrompt, callModel, improveMapping, lookCells, parseMappingReply, parseRange, sampleWorkbook, stats, type AiProgress } from '../src/mapping/ai';
 import { detectMapping } from '../src/mapping/detect';
 import { extract } from '../src/extract/extract';
 import { emptyMapping } from '../src/mapping/types';
@@ -71,6 +71,52 @@ describe('AI mapper', () => {
     expect(p.mapping!.mode).toBe('ai');
     expect(p.usage.promptTokens).toBe(16000);
     expect(p.usage.cost).toBeGreaterThan(0);
+  });
+
+  it('reads the ranges the model asks to see, hidden tabs and formulas too', () => {
+    const tab = good.games[0].tab;
+    const r = parseRange(wb, `'${tab}'!B3:D10`);
+    if (typeof r === 'string') throw new Error(r);
+    expect([r.r0, r.r1, r.c0, r.c1]).toEqual([2, 9, 1, 3]);
+    const rows = parseRange(wb, `${tab}!5:9`);
+    if (typeof rows === 'string') throw new Error(rows);
+    expect([rows.r0, rows.r1, rows.c0]).toEqual([4, 8, 0]);
+    expect(parseRange(wb, 'Nope!A1')).toMatch(/no tab called "Nope"/);
+    expect(lookCells(wb, [`${tab}!E5`])).toContain('E5: Flyght Club Open');
+    expect(lookCells(wb, ['Options'])).toMatch(/^## "Options"!A1:\w+\d+ \(hidden tab\)/);
+    const f = structuredClone(wb);
+    const t = f.tabs.find((x) => x.name === tab)!;
+    t.formulas = { ...t.formulas, '4,4': 'Seeding!B2' };
+    expect(lookCells(f, [`${tab}!E5`], true)).toContain('E5: Flyght Club Open [=Seeding!B2]');
+  });
+
+  it('works in steps: looks at cells, tries a mapping, then answers', async () => {
+    const tab = good.games[0].tab;
+    const { fetcher, calls } = fakeModel([
+      JSON.stringify({ look: [`${tab}!A1:H80`] }),
+      JSON.stringify({ try: good }),
+      JSON.stringify({ mapping: good, notes: ['Read the whole Gamelist'] }),
+    ]);
+    const seen: AiProgress[] = [];
+    const p = await improveMapping({ wb, current: broken, id: 'x', title: 'x', call: { key: 'k', fetcher }, onProgress: (x) => seen.push(x) });
+    expect(p.attempts).toBe(3);
+    expect(calls[1].body.messages.at(-1)!.content).toMatch(/^Cells:\n## "[^"]+"!A1:H80/);
+    expect(calls[2].body.messages.at(-1)!.content).toMatch(/^That mapping reads: Currently reads: 105 games/);
+    expect(calls[2].body.messages.at(-1)!.content).toContain('6 replies left.');
+    expect(p.steps).toEqual([`Looked at ${tab}!A1:H80`, expect.stringMatching(/^Tried a mapping: 105 games/), expect.stringMatching(/^Answered: 105 games/)]);
+    expect(p.mapping!.notes).toEqual(['Read the whole Gamelist']);
+    expect(p.better).toBe(true);
+    expect(seen.at(-1)).toMatchObject({ attempt: 3, rounds: 8 });
+  });
+
+  it('out of steps, the best mapping it tried is offered', async () => {
+    const worse = { ...good, games: [good.games[1]] };
+    const { fetcher, calls } = fakeModel([JSON.stringify({ try: worse }), JSON.stringify({ try: good }), JSON.stringify({ try: worse })]);
+    const p = await improveMapping({ wb, current: broken, id: 'x', title: 'x', call: { key: 'k', fetcher }, rounds: 3 });
+    expect(calls).toHaveLength(3);
+    expect(calls[2].body.messages.at(-1)!.content).toMatch(/Your next reply is the last/);
+    expect(p.after!.games).toBe(105);
+    expect(p.mapping!.notes).toContain('The AI ran out of steps; this is the best mapping it tried.');
   });
 
   it('a worse mapping is not offered as better', async () => {

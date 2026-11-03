@@ -58,6 +58,8 @@ export function UsageLine({ usage, ms }: { usage?: Usage; ms?: number }) {
 export function AiTask<R extends AiOutcome>({
   intro,
   checking = true,
+  typical = 'This usually takes 10–60 seconds.',
+  slowAfter = 45_000,
   run,
   done,
 }: {
@@ -65,6 +67,10 @@ export function AiTask<R extends AiOutcome>({
   intro?: ReactNode;
   /** The job checks the answer against the sheet afterwards. */
   checking?: boolean;
+  /** How long the job usually takes, shown while it runs. */
+  typical?: string;
+  /** Milliseconds after which the job counts as slow. */
+  slowAfter?: number;
   run: (ctl: AiControls) => Promise<R>;
   done: (r: R, info: { ms: number; again: () => void }) => ReactNode;
 }) {
@@ -128,6 +134,8 @@ export function AiTask<R extends AiOutcome>({
         progress={progress}
         ms={ms}
         checking={checking}
+        typical={typical}
+        slowAfter={slowAfter}
         onCancel={() => {
           ctl.current?.abort();
           ctl.current = undefined;
@@ -180,7 +188,21 @@ export function AiTask<R extends AiOutcome>({
 
 type StepState = 'done' | 'on' | 'todo';
 
-function AiProgressView({ progress: p, ms, checking, onCancel }: { progress: AiProgress; ms: number; checking: boolean; onCancel: () => void }) {
+function AiProgressView({
+  progress: p,
+  ms,
+  checking,
+  typical,
+  slowAfter,
+  onCancel,
+}: {
+  progress: AiProgress;
+  ms: number;
+  checking: boolean;
+  typical: string;
+  slowAfter: number;
+  onCancel: () => void;
+}) {
   const order: AiPhase[] = ['reading', 'waiting', 'thinking', 'writing', 'checking'];
   const at = order.indexOf(p.phase);
   const st = (phase: AiPhase): StepState => {
@@ -195,12 +217,13 @@ function AiProgressView({ progress: p, ms, checking, onCancel }: { progress: AiP
       key: 'think',
       s: think,
       label: think === 'done' ? (p.thinking ? 'Model thought it through' : 'Model started answering') : p.phase === 'thinking' ? 'Model is thinking…' : 'Waiting for the model…',
-      sub: p.phase === 'thinking' ? `${n(p.thinking)} characters of reasoning` : think === 'on' ? modelName() : undefined,
+      sub: [p.rounds && p.rounds > 1 ? `Step ${p.attempt} of up to ${p.rounds}` : '', p.phase === 'thinking' ? `${n(p.thinking)} characters of reasoning` : think === 'on' ? modelName() : ''].filter(Boolean).join(' · ') || undefined,
     },
     { key: 'write', s: st('writing'), label: st('writing') === 'done' ? 'Answer received' : 'Writing the answer…', sub: p.phase === 'writing' ? `${n(p.writing)} characters` : undefined },
   ];
   if (checking) steps.push({ key: 'check', s: st('checking'), label: 'Checking it against the sheet…' });
-  const slow = ms > 45_000;
+  const slow = ms > slowAfter;
+  const did = p.steps ?? [];
   return (
     <div className="stack ai-run" aria-live="polite">
       <div className="ai-run-head">
@@ -211,7 +234,7 @@ function AiProgressView({ progress: p, ms, checking, onCancel }: { progress: AiP
           {clock(ms)}
         </span>
       </div>
-      {p.attempt > 1 && <p className="ai-retry small">The first answer didn’t fit the sheet, so we sent the problems back for one more try.</p>}
+      {(p.retry ?? (p.attempt > 1 && !p.rounds)) && <p className="ai-retry small">The answer didn’t fit the sheet, so we sent the problems back for one more try.</p>}
       <ol className="ai-steps">
         {steps.map((x) => (
           <li key={x.key} className={x.s}>
@@ -225,12 +248,29 @@ function AiProgressView({ progress: p, ms, checking, onCancel }: { progress: AiP
           </li>
         ))}
       </ol>
+      {did.length > 0 && <AiSteps steps={did} last={4} />}
       <p className={`small ${slow ? 'ai-slow' : 'muted'}`} style={{ margin: 0 }}>
-        {slow ? `Taking longer than usual. Some models think for a few minutes; we stop waiting at ${clock(TIMEOUTS.total)}.` : 'This usually takes 10–60 seconds.'}
+        {slow ? `Taking longer than usual. Some models think for a few minutes; we stop waiting for any one answer at ${clock(TIMEOUTS.total)}.` : typical}
       </p>
       <button className="btn" onClick={onCancel}>
         Cancel
       </button>
+    </div>
+  );
+}
+
+/** What the AI did on the way (looked at cells, tried a mapping), newest last. */
+export function AiSteps({ steps, last }: { steps: string[]; last?: number }) {
+  const shown = last ? steps.slice(-last) : steps;
+  return (
+    <div className="ai-notes">
+      <b className="small">What the AI did</b>
+      <ul className="small">
+        {steps.length > shown.length && <li className="muted">{steps.length - shown.length} earlier steps</li>}
+        {shown.map((x, i) => (
+          <li key={i}>{x}</li>
+        ))}
+      </ul>
     </div>
   );
 }

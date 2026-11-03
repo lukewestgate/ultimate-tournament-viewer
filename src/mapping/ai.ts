@@ -1,5 +1,5 @@
 import { clean } from '../sheets/cells';
-import { colName, width, type Workbook } from '../sheets/workbook';
+import { cellKey, colName, findTab, width, type Tab, type Workbook } from '../sheets/workbook';
 import type { Format, Rules, Source, Tiebreak, Tournament } from '../model/types';
 import { divKey } from '../model/types';
 import type { Mapping } from './types';
@@ -84,8 +84,16 @@ function errorDetail(body: string): string {
   return body.trim().slice(0, 160);
 }
 
+/** Most model calls one Improve with AI run makes: looks and tries, then the answer. */
+export const MAX_ROUNDS = 8;
+
 const SYSTEM = `You map Google Sheets of ultimate frisbee tournaments into a JSON "mapping" that says WHERE data is.
-Never return the data itself. Reply with ONE JSON object only: {"mapping": Mapping, "notes": string[]}.
+Never return the data itself. Every reply is ONE JSON object, one of:
+ {"look":["Gamelist!A60:P200","Pools!A1:L40"],"formulas"?:true}  // see more cells: A1 ranges on any tab, hidden ones too; formulas adds each cell's formula
+ {"try":Mapping}                                                  // see what a mapping reads, without answering yet
+ {"mapping":Mapping,"notes":string[]}                             // your final answer; notes: a few short lines for the user on what you changed and why
+"look" and "try" can go in one reply. You have up to ${MAX_ROUNDS} replies in all. The sample below is cut off on long tabs: look at the
+rest before setting lastRow, ignoreRows or pool tables further down, and try a mapping before answering when you change much.
 Mapping indices are 0-based (column A = 0, sheet row 1 = 0). Cells are shown as "A1: text" (1-based, as in the sheet).
 Game refs are "Tab!row" with the 1-based sheet row for lists ("Gamelist!284"), "Tab!B12" (the block's sep cell) for grids.
 Mapping = {
@@ -124,26 +132,88 @@ team names are good evidence), no games missing a division, no junk rows read as
 pool tables reading the right rows and columns, sensible dates and game lengths. Fix layout mistakes in the mapping, and
 what the layout can't express with corrections. Keep the current corrections unless they're wrong.`;
 
+/** One line per row of a rectangle of a tab: the non-empty cells as "A1: text", with formulas when asked. */
+function cellLines(tab: Tab, r0: number, r1: number, c0: number, c1: number, maxChars: number, formulas = false): string[] {
+  const out: string[] = [];
+  for (let r = r0; r <= Math.min(r1, tab.rows.length - 1); r++) {
+    const cells: string[] = [];
+    const row = tab.rows[r] ?? [];
+    for (let c = c0; c <= Math.min(c1, row.length - 1); c++) {
+      const v = clean(row[c]);
+      const f = formulas ? tab.formulas?.[cellKey(r, c)] : undefined;
+      if (v || f) cells.push(`${colName(c)}${r + 1}: ${v.slice(0, maxChars)}${f ? ` [=${f.slice(0, 120)}]` : ''}`);
+    }
+    if (cells.length) out.push(cells.join(' | '));
+  }
+  return out;
+}
+
 /** Row/column-labelled non-empty cells of every visible tab (first ~60 rows x ~50 cols, ~40 chars each). */
 export function sampleWorkbook(wb: Workbook, maxRows = 60, maxCols = 50, maxChars = 40): string {
   const out: string[] = [];
   for (const t of wb.tabs) {
     if (t.hidden) continue;
     out.push(`## Tab "${t.name}"`);
-    for (let r = 0; r < Math.min(maxRows, t.rows.length); r++) {
-      const cells: string[] = [];
-      const row = t.rows[r] ?? [];
-      for (let c = 0; c < Math.min(maxCols, row.length); c++) {
-        const v = clean(row[c]);
-        if (v) cells.push(`${colName(c)}${r + 1}: ${v.slice(0, maxChars)}`);
-      }
-      if (cells.length) out.push(cells.join(' | '));
-    }
+    out.push(...cellLines(t, 0, maxRows - 1, 0, maxCols - 1, maxChars));
     const w = width(t);
     if (t.rows.length > maxRows || w > maxCols) out.push(`(tab is ${t.rows.length} rows x ${w} columns; only the first ${Math.min(maxRows, t.rows.length)} rows x ${Math.min(maxCols, w)} columns are shown)`);
   }
   const hidden = wb.tabs.filter((t) => t.hidden).map((t) => t.name);
   if (hidden.length) out.push(`Hidden tabs (not shown): ${hidden.join(', ')}`);
+  return out.join('\n');
+}
+
+const colIndex = (letters: string) => [...letters.toUpperCase()].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+
+/** Most rows one look shows from a range, and most characters of cells one look sends back. */
+const LOOK_ROWS = 400;
+const LOOK_CHARS = 40_000;
+
+/**
+ * A range the model asked to see: "Gamelist!A60:P200", "'My tab'!60:200", "Pools!C:F", "Pools!B7" or a bare tab name,
+ * as 0-based inclusive bounds, clamped to the tab. A string is an error to send back.
+ */
+export function parseRange(wb: Workbook, ref: string): { tab: Tab; r0: number; r1: number; c0: number; c1: number } | string {
+  const at = ref.lastIndexOf('!');
+  const name = (at < 0 ? ref : ref.slice(0, at)).trim().replace(/^'(.*)'$/, '$1');
+  const tab = findTab(wb, name);
+  if (!tab) return `There's no tab called "${name}". Tabs: ${wb.tabs.map((t) => `"${t.name}"`).join(', ')}.`;
+  const lastRow = Math.max(tab.rows.length - 1, 0);
+  const lastCol = Math.max(width(tab) - 1, 0);
+  const m = /^([A-Z]*)(\d*)(?::([A-Z]*)(\d*))?$/i.exec(at < 0 ? '' : ref.slice(at + 1).trim().replace(/\$/g, ''));
+  if (!m) return `"${ref}" isn't a range like "${tab.name}!A1:P200".`;
+  const [, ca, ra, cb, rb] = m;
+  const single = m[3] === undefined && ca && ra;
+  const c0 = ca ? colIndex(ca) : 0;
+  const r0 = ra ? Number(ra) - 1 : 0;
+  const c1 = single ? c0 : cb ? colIndex(cb) : lastCol;
+  const r1 = single ? r0 : rb ? Number(rb) - 1 : lastRow;
+  return { tab, r0: Math.max(0, r0), r1: Math.min(r1, lastRow, Math.max(0, r0) + LOOK_ROWS - 1), c0: Math.max(0, c0), c1: Math.min(c1, lastCol) };
+}
+
+/** The cells of the ranges the model asked to see, bounded in size. Hidden tabs can be looked at too. */
+export function lookCells(wb: Workbook, refs: string[], formulas = false): string {
+  const out: string[] = [];
+  let size = 0;
+  for (const ref of refs.slice(0, 10)) {
+    const r = parseRange(wb, ref);
+    if (typeof r === 'string') {
+      out.push(r);
+      continue;
+    }
+    const span = `${colName(r.c0)}${r.r0 + 1}:${colName(r.c1)}${r.r1 + 1}`;
+    out.push(`## "${r.tab.name}"!${span}${r.tab.hidden ? ' (hidden tab)' : ''}, tab is ${r.tab.rows.length} rows x ${width(r.tab)} columns`);
+    const lines = cellLines(r.tab, r.r0, r.r1, r.c0, r.c1, 60, formulas);
+    if (!lines.length) out.push('(all empty)');
+    for (const line of lines) {
+      if (size + line.length > LOOK_CHARS) {
+        out.push(`(cut off here to save room: look again from ${line.slice(0, line.indexOf(':'))})`);
+        return out.join('\n');
+      }
+      size += line.length;
+      out.push(line);
+    }
+  }
   return out.join('\n');
 }
 
@@ -449,6 +519,12 @@ export function parseMappingReply(text: string, wb: Workbook, base: Mapping): { 
   } catch (e) {
     return { errors: [(e as Error).message] };
   }
+  return parseMappingObject(obj, wb, base);
+}
+
+/** A mapping from the model ({"mapping": …, "notes": …} or the mapping itself), checked against the workbook. */
+function parseMappingObject(obj: unknown, wb: Workbook, base: Mapping): { mapping?: Mapping; errors: string[] } {
+  if (!obj || typeof obj !== 'object') return { errors: ["The mapping isn't a JSON object."] };
   const m = ((obj as { mapping?: unknown }).mapping ?? obj) as Partial<Mapping>;
   if (!m || !Array.isArray(m.games)) return { errors: ['The mapping has no "games" array.'] };
   const mapping: Mapping = {
@@ -464,7 +540,7 @@ export function parseMappingReply(text: string, wb: Workbook, base: Mapping): { 
     rules: base.rules?.source === 'user' ? base.rules : (cleanRules(m.rules) ?? base.rules),
     engineLevel: base.engineLevel,
     template: base.template,
-    notes: Array.isArray((obj as { notes?: unknown }).notes) ? ((obj as { notes: string[] }).notes as string[]).slice(0, 5) : undefined,
+    notes: Array.isArray((obj as { notes?: unknown }).notes) ? (obj as { notes: unknown[] }).notes.filter((x): x is string => typeof x === 'string').slice(0, 8) : undefined,
   };
   for (const g of mapping.games) if (!g || (g.kind !== 'list' && g.kind !== 'grid')) return { errors: ['Every game source needs kind "list" or "grid".'] };
   const errors = validateMapping(wb, mapping);
@@ -479,16 +555,26 @@ export interface AiProposal {
   usage: Usage;
   error?: string;
   errorKind?: AiErrorKind;
+  /** Model calls made. */
   attempts: number;
+  /** What the AI did on the way, in order ("Looked at Gamelist!A60:P200"). */
+  steps: string[];
 }
 
 export type AiPhase = 'reading' | 'waiting' | 'thinking' | 'writing' | 'checking';
 
 export interface AiProgress extends StreamProgress {
   phase: AiPhase;
+  /** Which model call this is (1-based). */
   attempt: number;
   /** Characters of sheet sample and instructions sent. */
   sent?: number;
+  /** Most model calls the job may make, when it works in steps. */
+  rounds?: number;
+  /** What the AI has done so far. */
+  steps?: string[];
+  /** The last answer didn't fit the sheet and was sent back. */
+  retry?: boolean;
 }
 
 const isBetter = (a: Stats, b: Stats) => a.problems.length < b.problems.length || (a.problems.length === b.problems.length && a.withTeams >= b.withTeams && a.games > 0);
@@ -507,50 +593,140 @@ function withPhases(call: AiCall, onProgress: ((p: AiProgress) => void) | undefi
   };
 }
 
+/** Most characters of conversation kept; older looks are dropped first (the model can look again). */
+const HISTORY_CHARS = 240_000;
+/** Most characters of one model reply kept in the conversation. */
+const REPLY_CHARS = 20_000;
+
+const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
+const statLine = (s: Stats) => `${plural(s.games, 'game')}, ${plural(s.teams, 'team')}, ${plural(s.problems.length, 'problem')}`;
+
 /**
- * Improve with AI (spec §6.4): send the sample, validate the reply, run it through the extractor and quality check,
- * retry once with the errors, and offer it only if it's at least as good as the current mapping. Never throws.
+ * Improve with AI (spec §6.4). The model works in steps: it can look at any range of the sheet and try a mapping to see
+ * what it reads, then gives its answer, which is validated, run through the extractor and quality check, and sent back
+ * once if it has problems. The result is offered only if it's at least as good as the current mapping. Never throws.
  */
-export async function improveMapping(args: { wb: Workbook; current: Mapping; id: string; title: string; call: AiCall; now?: number; onProgress?: (p: AiProgress) => void }): Promise<AiProposal> {
+export async function improveMapping(args: {
+  wb: Workbook;
+  current: Mapping;
+  id: string;
+  title: string;
+  call: AiCall;
+  now?: number;
+  onProgress?: (p: AiProgress) => void;
+  rounds?: number;
+}): Promise<AiProposal> {
   const { wb, current, id, title, call, onProgress } = args;
+  const rounds = args.rounds ?? MAX_ROUNDS;
   const usage: Usage = { promptTokens: 0, completionTokens: 0, cost: 0 };
+  const steps: string[] = [];
   let before = NO_STATS;
   let attempts = 0;
   try {
-    onProgress?.({ phase: 'reading', attempt: 1, thinking: 0, writing: 0 });
+    onProgress?.({ phase: 'reading', attempt: 1, thinking: 0, writing: 0, rounds, steps });
     const read = (m: Mapping) => extract(wb, m, { id, sheetUrl: '', now: args.now });
     const t0 = read(current);
     before = stats(t0, current, wb);
     const messages = buildMappingPrompt(wb, title, current, before, t0);
-    const sent = messages.reduce((n, m) => n + m.content.length, 0);
-    let lastErrors: string[] = [];
-    for (let i = 0; i < 2; i++) {
-      attempts++;
-      const reply = await callModel(withPhases(call, onProgress, { attempt: attempts, sent }), messages, { effort: 'medium' });
+    // User turns that showed cells, with the cells taken out, for when the conversation gets too long.
+    const short = new Map<number, string>();
+    const prune = () => {
+      let size = messages.reduce((n, m) => n + m.content.length, 0);
+      for (const [i, s] of short) {
+        if (size <= HISTORY_CHARS) break;
+        size -= messages[i].content.length - s.length;
+        messages[i].content = s;
+        short.delete(i);
+      }
+    };
+    /** A mapping the model gave, checked: what it reads, or why it can't be used. */
+    const check = (obj: unknown) => {
+      const { mapping, errors } = parseMappingObject(obj, wb, current);
+      if (!mapping) return { errors };
+      try {
+        const t = read(mapping);
+        return { mapping, t, after: stats(t, mapping, wb), errors };
+      } catch (e) {
+        return { errors: [...errors, `The mapping couldn't be read: ${(e as Error).message}`] };
+      }
+    };
+    let best: { mapping: Mapping; after: Stats } | undefined;
+    const consider = (mapping: Mapping, after: Stats) => {
+      const score = (s: Stats) => [-s.problems.length, s.withTeams, s.games];
+      const a = score(after);
+      const b = best && score(best.after);
+      // Ties go to the later mapping: the model has seen more by then.
+      if (!b || a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] >= b[2])))) best = { mapping, after };
+    };
+    const done = (mapping: Mapping, after: Stats): AiProposal => ({ mapping, before, after, better: isBetter(after, before), usage, attempts, steps });
+    let sentBack = 0;
+    let retry = false;
+    for (let round = 1; round <= rounds; round++) {
+      attempts = round;
+      const sent = messages.reduce((n, m) => n + m.content.length, 0);
+      const reply = await callModel(withPhases(call, onProgress, { attempt: round, sent, rounds, steps, retry }), messages, { effort: 'medium' });
       usage.promptTokens += reply.usage.promptTokens;
       usage.completionTokens += reply.usage.completionTokens;
       usage.cost += reply.usage.cost;
-      onProgress?.({ phase: 'checking', attempt: attempts, sent, thinking: 0, writing: reply.text.length });
-      const { mapping, errors } = parseMappingReply(reply.text, wb, current);
-      let after: Stats | undefined;
-      if (mapping) {
-        try {
-          after = stats(read(mapping), mapping, wb);
-        } catch (e) {
-          errors.push(`The mapping couldn't be read: ${(e as Error).message}`);
+      onProgress?.({ phase: 'checking', attempt: round, sent, thinking: 0, writing: reply.text.length, rounds, steps, retry });
+      retry = false;
+      const parts: string[] = [];
+      let cells = '';
+      let obj: Record<string, unknown> | undefined;
+      try {
+        const j = extractJson(reply.text);
+        if (j && typeof j === 'object' && !Array.isArray(j)) obj = j as Record<string, unknown>;
+        else parts.push('That reply has problems: reply with one JSON object.');
+      } catch (e) {
+        parts.push(`That reply has problems: it isn't one JSON object (${(e as Error).message}).`);
+      }
+      if (obj && 'mapping' in obj) {
+        const r = check(obj);
+        if (r.mapping && r.after) {
+          consider(r.mapping, r.after);
+          steps.push(`Answered: ${statLine(r.after)}`);
+          // One chance to fix problems in the answer; problems in the sheet itself may not be fixable.
+          if (!r.after.problems.length || sentBack >= 1) return done(r.mapping, r.after);
+        } else steps.push('Answered with a mapping that doesn’t fit the sheet');
+        sentBack++;
+        retry = true;
+        parts.push(`That mapping has problems: ${[...r.errors, ...(r.after?.problems ?? [])].join('; ')}. Fix them and send the final {"mapping","notes"} again.`);
+      } else if (obj) {
+        const refs = (Array.isArray(obj.look) ? obj.look : typeof obj.look === 'string' ? [obj.look] : []).filter((x): x is string => typeof x === 'string');
+        if (refs.length) {
+          cells = lookCells(wb, refs, obj.formulas === true);
+          steps.push(`Looked at ${refs.slice(0, 3).join(', ')}${refs.length > 3 ? ` and ${refs.length - 3} more` : ''}${obj.formulas === true ? ' with formulas' : ''}`);
         }
+        if ('try' in obj) {
+          const tried = obj.try as { mapping?: unknown } | undefined;
+          const r = check({ mapping: tried?.mapping ?? tried }); // some models wrap it
+          if (r.mapping && r.after && r.t) {
+            consider(r.mapping, r.after);
+            steps.push(`Tried a mapping: ${statLine(r.after)}`);
+            parts.push(`That mapping reads: ${summaryText(r.after)}\n${readout(r.t, r.mapping)}`);
+          } else {
+            steps.push('Tried a mapping that doesn’t fit the sheet');
+            parts.push(`That mapping can't be used: ${r.errors.join('; ')}`);
+          }
+        }
+        if (!refs.length && !('try' in obj)) parts.push('Reply with "look", "try" or your final "mapping".');
       }
-      if (mapping && after && !after.problems.length) return { mapping, before, after, better: isBetter(after, before), usage, attempts };
-      lastErrors = [...errors, ...(after?.problems ?? [])];
-      if (i === 0) {
-        messages.push({ role: 'assistant', content: reply.text.slice(0, 6000) }, { role: 'user', content: `That mapping has problems: ${lastErrors.join('; ')}. Fix them and reply with the JSON object only.` });
-      } else if (mapping && after) {
-        return { mapping, before, after, better: isBetter(after, before), usage, attempts };
-      }
+      if (round === rounds) break;
+      parts.push(round + 1 === rounds ? 'Your next reply is the last: send your final {"mapping","notes"}.' : `${rounds - round} replies left.`);
+      const rest = parts.join('\n\n');
+      const at = messages.length + 1;
+      messages.push({ role: 'assistant', content: reply.text.slice(0, REPLY_CHARS) }, { role: 'user', content: cells ? `Cells:\n${cells}\n\n${rest}` : rest });
+      if (cells) short.set(at, `(Cells shown here earlier were removed to save room; look again if you need them.)\n\n${rest}`);
+      prune();
     }
-    return { before, better: false, usage, error: `The AI's answer wasn't usable, even after one retry: ${lastErrors.slice(0, 3).join('; ')}`, errorKind: 'reply', attempts };
+    if (best) {
+      const b = best as { mapping: Mapping; after: Stats };
+      b.mapping.notes = [...(b.mapping.notes ?? []), 'The AI ran out of steps; this is the best mapping it tried.'].slice(-8);
+      return done(b.mapping, b.after);
+    }
+    return { before, better: false, usage, error: `The AI didn't come up with a usable mapping in ${plural(rounds, 'step')}.`, errorKind: 'reply', attempts, steps };
   } catch (e) {
-    return { before, better: false, usage, error: (e as Error).message || String(e), errorKind: errorKind(e), attempts };
+    return { before, better: false, usage, error: (e as Error).message || String(e), errorKind: errorKind(e), attempts, steps };
   }
 }
 
