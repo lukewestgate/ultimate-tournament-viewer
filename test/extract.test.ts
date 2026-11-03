@@ -102,6 +102,21 @@ describe('uku-template', () => {
     expect(t.links.spirit).toMatch(/forms/);
     expect(t.spirit).toHaveLength(16);
   });
+  it('ignores a team "playing itself" on a spare pitch (formula spill-over)', () => {
+    const wb = structuredClone(loadFixture('uku-template'));
+    const src = mapping.games[0];
+    if (src.kind !== 'list') throw new Error('expected a list source');
+    const tab = wb.tabs.find((x) => x.name === src.tab)!;
+    const real = tab.rows.findIndex((r, i) => i > src.headerRow && r[src.cols.team1!] && r[src.cols.code!]);
+    const row = [...tab.rows[real]];
+    row[src.cols.pitch!] = '9';
+    row[src.cols.team2!] = row[src.cols.team1!];
+    for (const c of [src.cols.code, src.cols.slot1, src.cols.slot2, src.cols.score1, src.cols.score2]) if (c !== undefined) row[c] = '';
+    tab.rows.splice(real + 1, 0, row);
+    const t2 = extract(wb, mapping, { id: 'self', sheetUrl: '', now: NOW });
+    expect(t2.games).toHaveLength(t.games.length);
+    expect(t2.games.some((g) => g.teams[0] && g.teams[0] === g.teams[1])).toBe(false);
+  });
 });
 
 describe('grid-exp-beg', () => {
@@ -267,6 +282,33 @@ describe('outdoor-2', () => {
   });
   it('pitch map link', () => {
     expect(t.links.pitchMap).toMatch(/drive\.google/);
+  });
+  it('corrections move teams and games between divisions and drop rows', () => {
+    const { mapping } = load('outdoor-2');
+    const team = t.teams.find((x) => x.division === 'Open' && x.seed === undefined) ?? t.teams.find((x) => x.division === 'Open')!;
+    const game = t.games.find((g) => g.division === 'Open' && !g.teams.includes(team.name))!;
+    const dropped = t.games.find((g) => g.division === 'Women')!;
+    const m = {
+      ...mapping,
+      corrections: { ...mapping.corrections, teamDivisions: { [`Open::${team.name}`]: 'Women' }, gameDivisions: { [game.ref]: 'Women' }, ignoreRows: [dropped.ref] },
+    };
+    const t2 = extract(loadFixture('outdoor-2'), m, { id: 'c', sheetUrl: '', now: NOW });
+    expect(t2.teams.filter((x) => x.name === team.name).map((x) => x.division)).not.toContain('Open');
+    expect(t2.games.find((g) => g.ref === game.ref)!.division).toBe('Women');
+    expect(t2.games.some((g) => g.ref === dropped.ref)).toBe(false);
+    expect(t2.games).toHaveLength(t.games.length - 1);
+  });
+  it('flags a seeded team grouped into a division it isn\'t seeded in, and games with no division', () => {
+    const seeded = t.seeding.find((s) => s.division === 'Open')!;
+    const bad: Tournament = {
+      ...t,
+      seeding: [...t.seeding, { division: 'Women', seed: 99, team: 'Somebody Else' }],
+      teams: [...t.teams, { ...t.teams.find((x) => x.name === seeded.team)!, division: 'Women', seed: undefined }],
+      games: t.games.map((g, i) => (i === 0 ? { ...g, division: undefined } : g)),
+    };
+    const texts = problemsOnly(qualityCheck(bad, load('outdoor-2').mapping)).map((p) => p.text);
+    expect(texts.some((x) => x.includes(`“${seeded.team}” is in Women but seeded in Open`))).toBe(true);
+    expect(texts.some((x) => /1 game isn't in any division/.test(x))).toBe(true);
   });
 });
 

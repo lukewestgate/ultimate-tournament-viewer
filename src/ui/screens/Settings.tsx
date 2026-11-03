@@ -43,6 +43,15 @@ function SettingsPage() {
   const presetName = r.preset === 'uku' ? 'UKU' : r.preset === 'pointsDiff' ? 'Points and difference' : 'Custom';
   const divs = t.divisions.length ? t.divisions.map((d) => d.name) : [undefined];
   const aliases = Object.entries(m.corrections.aliases);
+  const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
+  const nTeams = Object.keys(m.corrections.teamDivisions ?? {}).length;
+  const nGames = Object.keys(m.corrections.gameDivisions ?? {}).length;
+  const nIgnored = m.corrections.ignoreRows?.length ?? 0;
+  const overrides = [
+    nTeams && `${plural(nTeams, 'team')} moved to another division`,
+    nGames && `${plural(nGames, 'game')} put in a division`,
+    nIgnored && `${plural(nIgnored, 'row')} ignored`,
+  ].filter((x): x is string => Boolean(x));
   return (
     <SubPage title="How this sheet is read" sub={t.title}>
       <section className="card set-summary">
@@ -134,6 +143,16 @@ function SettingsPage() {
             />
           </label>
         ))}
+        {overrides.length > 0 && (
+          <div className="set-row">
+            <span className="small muted">
+              {overrides.join(' · ')}.{' '}
+              <button className="link" onClick={() => corr((x) => ({ ...x, teamDivisions: undefined, gameDivisions: undefined, ignoreRows: undefined }))}>
+                Undo
+              </button>
+            </span>
+          </div>
+        )}
         <label className="set-row">
           <span>Title</span>
           <input className="inline-field" defaultValue={m.corrections.title ?? t.title} onBlur={(e) => e.target.value !== t.title && corr((x) => ({ ...x, title: e.target.value || undefined }))} />

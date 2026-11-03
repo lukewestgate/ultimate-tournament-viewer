@@ -18,6 +18,8 @@ interface Input {
   standingsLabels: string[];
   poolTabs: { pool: string; tab: string }[];
   names: Record<string, string>;
+  /** Overrides: team ("div::name" for the copy read into that division) -> division. */
+  teamDivisions?: Record<string, string>;
 }
 
 export interface DivisionResult {
@@ -223,7 +225,8 @@ export function splitDivisions(input: Input): DivisionResult {
 
   const nodeDivision = new Map<string, string>();
   const allTeams = () => [...adj.keys()].map((k) => ({ name: nodeName(k), division: nodeDivision.get(k) }));
-  if (comps.length <= 1) {
+  const pins = input.teamDivisions ?? {};
+  if (comps.length <= 1 && !Object.keys(pins).length) {
     return { divisions: [], divisionOf: () => undefined, gameDivision: () => undefined, teams: dedupeTeams(allTeams()) };
   }
 
@@ -277,6 +280,18 @@ export function splitDivisions(input: Input): DivisionResult {
     divs.push({ name: display, code, group });
     for (const k of c) nodeDivision.set(k, display);
   });
+
+  // User or AI overrides win over the grouping; a new name makes a new division, emptied ones go.
+  for (const k of adj.keys()) {
+    const n = nodeName(k);
+    const to = pins[`${nodeDivision.get(k) ?? ''}::${n}`] ?? pins[n];
+    if (!to) continue;
+    const name = input.names[to] ?? to;
+    if (!divs.some((d) => d.name === name)) divs.push({ name });
+    nodeDivision.set(k, name);
+  }
+  const held = new Set(nodeDivision.values());
+  for (let i = divs.length - 1; i >= 0; i--) if (!held.has(divs[i].name)) divs.splice(i, 1);
 
   const codeDivision = new Map<string, string>();
   for (const d of divs) if (d.code && (codeCount.get(d.code) ?? 0) === 1) codeDivision.set(d.code, d.name);

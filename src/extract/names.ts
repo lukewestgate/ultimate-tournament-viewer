@@ -53,8 +53,20 @@ export function levenshtein(a: string, b: string): number {
   return prev[b.length];
 }
 
+/** Division word in a name ("Leeds 1 (Women's)" -> "w"), or "" when there's none. */
+function sideOf(name: string): string {
+  if (/\b(women|womens|women's|ladies|girls)\b/i.test(name)) return 'w';
+  if (/\b(men|mens|men's|boys)\b/i.test(name)) return 'm';
+  if (/\bmixed\b/i.test(name)) return 'x';
+  if (/\bopen\b/i.test(name)) return 'o';
+  return '';
+}
+
 /** Is `b` likely the same team as `a`? Used only for suggestions, never automatic merges. */
 export function likelySame(a: string, b: string): boolean {
+  const sa = sideOf(a);
+  const sb = sideOf(b);
+  if (sa && sb && sa !== sb) return false; // "KCL 1 (Men's)" and "KCL 1 (Women's)" are two teams
   const fa = foldName(withoutTag(a));
   const fb = foldName(withoutTag(b));
   if (!fa || !fb || fa === fb) return fa === fb && fa !== '' && foldName(a) !== foldName(b);

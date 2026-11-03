@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildMappingPrompt, callModel, improveMapping, sampleWorkbook, stats, type AiProgress } from '../src/mapping/ai';
+import { buildMappingPrompt, callModel, improveMapping, parseMappingReply, sampleWorkbook, stats, type AiProgress } from '../src/mapping/ai';
 import { detectMapping } from '../src/mapping/detect';
 import { extract } from '../src/extract/extract';
 import { emptyMapping } from '../src/mapping/types';
@@ -29,6 +29,18 @@ describe('AI mapper', () => {
     expect(size).toBeLessThan(120000); // ~16k tokens at most
     expect(sampleWorkbook(wb)).toContain('E5: Flyght Club Open');
     expect(sampleWorkbook(wb)).toContain('Hidden tabs (not shown): Options');
+  });
+
+  it('the prompt shows what the current mapping reads, and junk overrides are dropped', () => {
+    const wb2 = loadFixture('outdoor-2');
+    const m = detectMapping(wb2).mapping;
+    const t = extract(wb2, m, { id: 'x', sheetUrl: '' });
+    const msgs = buildMappingPrompt(wb2, 'x', m, stats(t, m, wb2), t);
+    expect(msgs[1].content).toMatch(/What the current mapping reads:\nDivision "Open" \(code O\): \d+ games, \d+ teams: .*\(seed 1\)/);
+    const reply = JSON.stringify({ mapping: { ...m, corrections: { teamDivisions: { a: 'Women', b: 3 }, ignoreRows: ['Gamelist!4', 7] } } });
+    const parsed = parseMappingReply(reply, wb2, m);
+    expect(parsed.mapping!.corrections.teamDivisions).toEqual({ a: 'Women' });
+    expect(parsed.mapping!.corrections.ignoreRows).toEqual(['Gamelist!4']);
   });
 
   it('an invalid reply is sent back once, then a better mapping is offered', async () => {

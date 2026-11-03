@@ -114,6 +114,12 @@ export interface Corrections {
   aliases: Record<string, string>;
   /** raw value or generated name -> display name */
   divisionNames: Record<string, string>;
+  /** team -> division it belongs in ("div::name" keys pick the copy read into that division) */
+  teamDivisions?: Record<string, string>;
+  /** game ref ("Gamelist!20") -> division */
+  gameDivisions?: Record<string, string>;
+  /** game refs ("Gamelist!20") that aren't real games */
+  ignoreRows?: string[];
   /** suggested merges the user rejected ("a|b") */
   rejectedMerges?: string[];
   title?: string;

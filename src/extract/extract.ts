@@ -65,13 +65,27 @@ export function extract(wb: Workbook, mapping: Mapping, opts: ExtractOptions): T
 
   // ---- raw games
   const raws: RawGame[] = [];
+  const isError = (s: string | undefined) => clean(s).startsWith('#');
+  // Formula spill-over (e.g. a spare pitch column): a team "playing itself", or errors in both team cells,
+  // with no code, slots or scores. Not a game.
+  const spillRow = (g: RawGame) =>
+    !clean(g.code) && isBlank(g.slot1) && isBlank(g.slot2) && !clean(g.score1) && !clean(g.score2) &&
+    ((!isBlank(g.team1) && foldName(g.team1!) === foldName(g.team2 ?? '')) || (isError(g.team1) && isError(g.team2)));
+  const ignored = new Set(corr.ignoreRows ?? []);
   mapping.games.forEach((src, i) => {
     try {
-      raws.push(...readGameSource(wb, src, i));
+      raws.push(...readGameSource(wb, src, i).filter((g) => !spillRow(g) && !ignored.has(g.ref)));
     } catch (e) {
       warnings.push(`Couldn't read games from ${src.tab}: ${(e as Error).message}`);
     }
   });
+  const broken = raws.filter((g) => isError(g.team1) || isError(g.team2));
+  if (broken.length) {
+    const refs = broken.slice(0, 3).map((g) => g.ref).join(', ');
+    warnings.push(
+      `${broken.length} game${broken.length === 1 ? ' shows' : 's show'} a formula error (like #REF!) where a team should be, so they show slots or seeds instead of teams. The sheet itself needs fixing there (${refs}${broken.length > 3 ? ', …' : ''}).`,
+    );
+  }
 
   // ---- names: aliases, folding, seeding spellings win
   const aliasMap = new Map<string, string>();
@@ -334,9 +348,16 @@ export function extract(wb: Workbook, mapping: Mapping, opts: ExtractOptions): T
     standingsLabels: mapping.standings.map((s) => s.label).filter((l): l is string => Boolean(l)),
     poolTabs: mapping.pools.map((p) => ({ pool: poolName(p.name), tab: p.tab })),
     names: corr.divisionNames,
+    teamDivisions: corr.teamDivisions,
   });
   const divisions: Division[] = divResult.divisions;
   games.forEach((g, i) => (g.division = divResult.gameDivision(g, codes[i])));
+  for (const g of games) {
+    const to = corr.gameDivisions?.[g.ref];
+    if (!to) continue;
+    g.division = corr.divisionNames[to] ?? to;
+    if (!divisions.some((d) => d.name === g.division)) divisions.push({ name: g.division });
+  }
   const divOf = (name: string, code?: string) => divResult.divisionOf(name, code);
 
   // Pool divisions from their table teams (or listing code).

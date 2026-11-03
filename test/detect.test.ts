@@ -75,6 +75,8 @@ describe('names', () => {
     expect(likelySame('Lancaster', 'Lancaster Fish')).toBe(true);
     expect(likelySame('Leeds 1', 'Leeds 2')).toBe(false);
     expect(likelySame('RGS Guildford A U20', 'RGS Guildford B U20')).toBe(false);
+    expect(likelySame("KCL 1 (Men's)", "KCL 1 (Women's)")).toBe(false);
+    expect(likelySame('Leeds Mixed', 'Leeds Open')).toBe(false);
   });
   it('club without region tag and team number', () => {
     expect(clubOf('Loughborough 1 (M2)')).toBe('Loughborough');

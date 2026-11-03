@@ -68,6 +68,19 @@ export function qualityCheck(t: Tournament, mapping: Mapping, wb?: Workbook): Pr
   const notPlaying = seeded.filter((s) => !playing.has(s));
   const anyResults = games.some((g) => g.teams[0] || g.teams[1]);
   if (anyResults && seeded.length >= 4 && notPlaying.length > seeded.length * 0.25) p(`${notPlaying.length} seeded teams never play.`);
+  if (t.divisions.length) {
+    const noDiv = games.filter((g) => !g.division);
+    if (noDiv.length) p(`${noDiv.length} game${noDiv.length === 1 ? " isn't" : "s aren't"} in any division (${noDiv.slice(0, 3).map((g) => g.ref).join(', ')}${noDiv.length > 3 ? ', …' : ''}).`);
+    // A seeded team showing up unseeded in another division that has its own seeding has been grouped wrongly.
+    const seededIn = new Map<string, Set<string>>();
+    for (const s of t.seeding) seededIn.set(s.team, (seededIn.get(s.team) ?? new Set()).add(s.division ?? ''));
+    const seededDivs = new Set(t.seeding.map((s) => s.division ?? ''));
+    const strays = t.teams.filter((x) => seededIn.has(x.name) && !seededIn.get(x.name)!.has(x.division ?? '') && seededDivs.has(x.division ?? ''));
+    if (strays.length) {
+      const where = (x: (typeof strays)[number]) => `“${x.name}” is in ${x.division ?? 'no division'} but seeded in ${[...seededIn.get(x.name)!].map((d) => d || 'no division').join(' and ')}`;
+      p(`${strays.length} team${strays.length === 1 ? '' : 's'} in a division ${strays.length === 1 ? "it isn't" : "they aren't"} seeded in: ${strays.slice(0, 3).map(where).join('; ')}${strays.length > 3 ? '; …' : ''}.`);
+    }
+  }
   const big = games.filter((g) => (g.scores[0] ?? 0) > 60 || (g.scores[1] ?? 0) > 60);
   if (big.length) p(`${big.length} scores look like something else (over 60).`);
   for (const m of mergeSuggestions(t, mapping.corrections.rejectedMerges)) {
