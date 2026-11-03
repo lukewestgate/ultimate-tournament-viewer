@@ -265,7 +265,7 @@ function AiProgressView({
       </ol>
       {did.length > 0 && <AiSteps steps={did} last={4} />}
       <p className={`small ${slow ? 'ai-slow' : 'muted'}`} style={{ margin: 0 }}>
-        {slow ? `Taking longer than usual. Some models think for a few minutes; we stop waiting for any one answer at ${clock(TIMEOUTS.total)}.` : typical}
+        {slow ? `Taking longer than usual. Some models think for a few minutes. We only give up if the model goes quiet for ${Math.round(TIMEOUTS.idle / 1000)} seconds, or one answer runs past ${clock(TIMEOUTS.total)}.` : typical}
       </p>
       <button className="btn" onClick={onCancel} disabled={stopping}>
         {stopping ? 'Stopping…' : keeps ? 'Stop and show the best so far' : 'Cancel'}

@@ -41,7 +41,9 @@ interface Timeouts {
   total: number;
 }
 
-export const TIMEOUTS: Timeouts = { first: 60_000, idle: 60_000, total: 180_000 };
+// A reply that keeps streaming is making progress (max_tokens bounds how long it can go), so the total is only a
+// backstop; a dead or stuck call is caught by the first and idle limits.
+export const TIMEOUTS: Timeouts = { first: 60_000, idle: 60_000, total: 360_000 };
 
 export interface Usage {
   promptTokens: number;
