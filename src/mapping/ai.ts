@@ -56,6 +56,8 @@ export class AiError extends Error {
   constructor(
     public kind: AiErrorKind,
     message: string,
+    /** What the failed call cost, when it got as far as an answer. */
+    public usage?: Usage,
   ) {
     super(message);
   }
@@ -460,12 +462,13 @@ export async function callModel(call: AiCall, messages: Msg[], opts: { maxTokens
     clearTimeout(idle);
     call.signal?.removeEventListener('abort', onCancel);
   }
-  if (!text.trim() && !opts.allowEmpty) {
-    throw new AiError('reply', finish === 'length' ? 'The model used up its room thinking and never wrote an answer. Try again, or pick a model that reasons less.' : 'The model sent back an empty answer.');
-  }
   const pt = usage?.prompt_tokens ?? 0;
   const ct = usage?.completion_tokens ?? 0;
-  return { text, usage: { promptTokens: pt, completionTokens: ct, cost: (pt * PRICE.in + ct * PRICE.out) / 1e6 } };
+  const cost: Usage = { promptTokens: pt, completionTokens: ct, cost: (pt * PRICE.in + ct * PRICE.out) / 1e6 };
+  if (!text.trim() && !opts.allowEmpty) {
+    throw new AiError('reply', finish === 'length' ? 'The model used up its room thinking and never wrote an answer. Try again, or pick a model that reasons less.' : 'The model sent back an empty answer.', cost);
+  }
+  return { text, usage: cost };
 }
 
 function extractJson(text: string): unknown {
@@ -559,6 +562,8 @@ export interface AiProposal {
   attempts: number;
   /** What the AI did on the way, in order ("Looked at Gamelist!A60:P200"). */
   steps: string[];
+  /** The run ended early (cancelled, or an error) and this is the best mapping it had tried. */
+  stopped?: AiErrorKind;
 }
 
 export type AiPhase = 'reading' | 'waiting' | 'thinking' | 'writing' | 'checking';
@@ -601,6 +606,11 @@ const HISTORY_CHARS = 240_000;
 const REPLY_CHARS = 20_000;
 
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
+
+/** Failures one step can have without ending the run: an empty or cut-off answer, a slow one, a provider hiccup. */
+const STEP_FAILURES = new Set<AiErrorKind>(['reply', 'timeout', 'server']);
+/** Failed steps in a row before giving up. */
+const MAX_FAILED = 3;
 const statLine = (s: Stats) => `${plural(s.games, 'game')}, ${plural(s.teams, 'team')}, ${plural(s.problems.length, 'problem')}`;
 
 /**
@@ -624,6 +634,27 @@ export async function improveMapping(args: {
   const steps: string[] = [];
   let before = NO_STATS;
   let attempts = 0;
+  const add = (u: Usage) => {
+    usage.promptTokens += u.promptTokens;
+    usage.completionTokens += u.completionTokens;
+    usage.cost += u.cost;
+  };
+  let best: { mapping: Mapping; after: Stats } | undefined;
+  const consider = (mapping: Mapping, after: Stats) => {
+    const score = (s: Stats) => [-s.problems.length, s.withTeams, s.games];
+    const a = score(after);
+    const b = best && score(best.after);
+    // Ties go to the later mapping: the model has seen more by then.
+    if (!b || a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] >= b[2])))) best = { mapping, after };
+  };
+  const done = (mapping: Mapping, after: Stats): AiProposal => ({ mapping, before, after, better: isBetter(after, before), usage, attempts, steps });
+  /** The best mapping tried so far, with a note saying why the run ended there. */
+  const offerBest = (note: string): AiProposal | undefined => {
+    if (!best) return undefined;
+    const b = best as { mapping: Mapping; after: Stats };
+    b.mapping.notes = [...(b.mapping.notes ?? []), note].slice(-8);
+    return done(b.mapping, b.after);
+  };
   try {
     onProgress?.({ phase: 'reading', attempt: 1, thinking: 0, writing: 0, rounds, steps });
     const read = (m: Mapping) => extract(wb, m, { id, sheetUrl: '', now: args.now });
@@ -652,24 +683,31 @@ export async function improveMapping(args: {
         return { errors: [...errors, `The mapping couldn't be read: ${(e as Error).message}`] };
       }
     };
-    let best: { mapping: Mapping; after: Stats } | undefined;
-    const consider = (mapping: Mapping, after: Stats) => {
-      const score = (s: Stats) => [-s.problems.length, s.withTeams, s.games];
-      const a = score(after);
-      const b = best && score(best.after);
-      // Ties go to the later mapping: the model has seen more by then.
-      if (!b || a[0] > b[0] || (a[0] === b[0] && (a[1] > b[1] || (a[1] === b[1] && a[2] >= b[2])))) best = { mapping, after };
-    };
-    const done = (mapping: Mapping, after: Stats): AiProposal => ({ mapping, before, after, better: isBetter(after, before), usage, attempts, steps });
     let sentBack = 0;
     let retry = false;
+    let failed = 0;
+    // Once a reply has run out of room thinking, the rest of the run thinks less.
+    let effort: Effort = 'medium';
     for (let round = 1; round <= rounds; round++) {
       attempts = round;
       const sent = messages.reduce((n, m) => n + m.content.length, 0);
-      const reply = await callModel(withPhases(call, onProgress, { attempt: round, sent, rounds, steps, retry }), messages, { effort: 'medium' });
-      usage.promptTokens += reply.usage.promptTokens;
-      usage.completionTokens += reply.usage.completionTokens;
-      usage.cost += reply.usage.cost;
+      let reply: Awaited<ReturnType<typeof callModel>>;
+      try {
+        reply = await callModel(withPhases(call, onProgress, { attempt: round, sent, rounds, steps, retry }), messages, { effort });
+      } catch (e) {
+        if (e instanceof AiError && e.usage) add(e.usage);
+        const kind = errorKind(e);
+        // A failed step costs that step, not the run: ask again, more briefly.
+        if (!STEP_FAILURES.has(kind) || ++failed >= MAX_FAILED || round === rounds) throw e;
+        effort = 'low';
+        steps.push(kind === 'reply' ? `Step ${round} came back empty (the model ran out of room thinking); asked again` : `Step ${round} failed (${(e as Error).message.replace(/\.$/, '')}); asked again`);
+        const last = messages[messages.length - 1];
+        const nudge = '(Your last reply never arrived: it ran out of room or time. Think briefly, then reply with a short "try" or your final "mapping".)';
+        if (!last.content.endsWith(nudge)) last.content += `\n\n${nudge}`;
+        continue;
+      }
+      failed = 0;
+      add(reply.usage);
       onProgress?.({ phase: 'checking', attempt: round, sent, thinking: 0, writing: reply.text.length, rounds, steps, retry });
       retry = false;
       const parts: string[] = [];
@@ -721,14 +759,23 @@ export async function improveMapping(args: {
       if (cells) short.set(at, `(Cells shown here earlier were removed to save room; look again if you need them.)\n\n${rest}`);
       prune();
     }
-    if (best) {
-      const b = best as { mapping: Mapping; after: Stats };
-      b.mapping.notes = [...(b.mapping.notes ?? []), 'The AI ran out of steps; this is the best mapping it tried.'].slice(-8);
-      return done(b.mapping, b.after);
-    }
-    return { before, better: false, usage, error: `The AI didn't come up with a usable mapping in ${plural(rounds, 'step')}.`, errorKind: 'reply', attempts, steps };
+    return (
+      offerBest('The AI ran out of steps; this is the best mapping it tried.') ?? {
+        before,
+        better: false,
+        usage,
+        error: `The AI didn't come up with a usable mapping in ${plural(rounds, 'step')}.`,
+        errorKind: 'reply',
+        attempts,
+        steps,
+      }
+    );
   } catch (e) {
-    return { before, better: false, usage, error: (e as Error).message || String(e), errorKind: errorKind(e), attempts, steps };
+    const kind = errorKind(e);
+    const msg = ((e as Error).message || String(e)).replace(/\.$/, '');
+    const early = offerBest(kind === 'cancelled' ? 'Stopped early: this is the best mapping the AI had tried.' : `The AI stopped early (${msg}); this is the best mapping it had tried.`);
+    if (early) return { ...early, stopped: kind };
+    return { before, better: false, usage, error: (e as Error).message || String(e), errorKind: kind, attempts, steps };
   }
 }
 
@@ -846,7 +893,7 @@ export async function aiSetup(args: Parameters<typeof improveMapping>[0] & { for
   const staged = (stage: string) => args.onProgress && ((x: AiProgress) => args.onProgress!({ ...x, stage, steps: x.steps ?? res.steps }));
   const p = await improveMapping({ ...args, onProgress: staged('Mapping the sheet') });
   const res: AiSetup = { ...p, steps: [...p.steps], rulesFromAi: false };
-  if (!p.mapping) return res;
+  if (!p.mapping || p.stopped === 'cancelled') return res;
   const add = (u?: Usage) => {
     if (!u) return;
     res.usage = { promptTokens: res.usage.promptTokens + u.promptTokens, completionTokens: res.usage.completionTokens + u.completionTokens, cost: res.usage.cost + u.cost };
@@ -862,7 +909,10 @@ export async function aiSetup(args: Parameters<typeof improveMapping>[0] & { for
     if (current?.source !== 'user' && !res.rulesFromAi && infoText.trim()) {
       const r = await aiRules(args.call, infoText, staged('Reading the rules'));
       add(r.usage);
-      if (r.errorKind === 'cancelled') throw new AiError('cancelled', 'Cancelled.');
+      if (r.errorKind === 'cancelled') {
+        res.steps.push('Stopped before reading the rules');
+        return { ...res, stopped: 'cancelled' };
+      }
       if (r.rules) {
         mapping.rules = r.rules;
         res.rulesFromAi = true;
@@ -874,7 +924,10 @@ export async function aiSetup(args: Parameters<typeof improveMapping>[0] & { for
     res.format = base;
     const f = await aiFormat(args.call, t, base, progressionFormulas(args.wb), t.info.map((x) => [x.title, ...x.lines].join('\n')).join('\n'), staged('Working out the format'));
     add(f.usage);
-    if (f.errorKind === 'cancelled') throw new AiError('cancelled', 'Cancelled.');
+    if (f.errorKind === 'cancelled') {
+      res.steps.push('Stopped before working out the format');
+      return { ...res, stopped: 'cancelled' };
+    }
     if (f.error) res.steps.push(`Couldn’t work out the format: ${f.error}`);
     else if (f.asked) {
       res.slots = { asked: f.asked, filled: f.filled };
@@ -882,7 +935,8 @@ export async function aiSetup(args: Parameters<typeof improveMapping>[0] & { for
       res.steps.push(`Worked out the format: filled ${f.filled} of ${plural(f.asked, 'unknown slot')}`);
     }
   } catch (e) {
-    return { ...res, mapping: undefined, format: undefined, error: (e as Error).message || String(e), errorKind: errorKind(e) };
+    // The mapping is still worth offering; say what didn't get done.
+    res.steps.push(`Couldn’t finish the rules and format: ${(e as Error).message || String(e)}`);
   }
   return res;
 }

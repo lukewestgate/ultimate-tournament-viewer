@@ -497,6 +497,9 @@ export function AiRun({ autoStart = false }: { autoStart?: boolean }) {
         const extras = p.rulesFromAi || Boolean(p.slots?.filled);
         return (
           <div className="stack">
+            {p.stopped && (
+              <p className="ai-retry small">{p.stopped === 'cancelled' ? 'Stopped early. This is the best mapping the AI had tried so far.' : 'The AI couldn’t finish, but here’s the best mapping it had tried.'}</p>
+            )}
             <span className={`tag ${same && !extras ? 'quiet' : p.better ? 'win' : 'warn'}`} style={{ alignSelf: 'flex-start' }}>
               {same ? (extras ? 'Same games and teams; rules or format filled in' : 'Same result as the current reading') : p.better ? 'Better than the current reading' : 'Not better than the current reading'}
             </span>

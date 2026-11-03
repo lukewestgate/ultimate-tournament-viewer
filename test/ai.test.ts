@@ -8,7 +8,7 @@ import { loadFixture } from './helpers/fixtures';
 /** A scripted fake model: returns the given replies in order. */
 function fakeModel(replies: string[]) {
   let i = 0;
-  const calls: { body: { messages: { role: string; content: string }[] } }[] = [];
+  const calls: { body: { messages: { role: string; content: string }[]; reasoning?: { effort: string } } }[] = [];
   const f = vi.fn(async (_url: string, init: RequestInit) => {
     calls.push({ body: JSON.parse(String(init.body)) });
     const content = replies[Math.min(i++, replies.length - 1)];
@@ -107,6 +107,41 @@ describe('AI mapper', () => {
     expect(p.mapping!.notes).toEqual(['Read the whole Gamelist']);
     expect(p.better).toBe(true);
     expect(seen.at(-1)).toMatchObject({ attempt: 3, rounds: 8 });
+  });
+
+  it('a step that comes back empty costs that step, not the run', async () => {
+    const { fetcher, calls } = fakeModel([JSON.stringify({ try: good }), '', JSON.stringify({ mapping: good })]);
+    const p = await improveMapping({ wb, current: broken, id: 'x', title: 'x', call: { key: 'k', fetcher } });
+    expect(p.error).toBeUndefined();
+    expect(p.after!.games).toBe(105);
+    expect(p.steps[1]).toMatch(/^Step 2 came back empty/);
+    expect(calls[0].body.reasoning!.effort).toBe('medium');
+    expect(calls[2].body.reasoning!.effort).toBe('low');
+    expect(calls[2].body.messages.at(-1)!.content).toMatch(/Your last reply never arrived/);
+    expect(p.usage.promptTokens).toBe(24000); // the empty step is counted too
+  });
+
+  it('after repeated failures, the best mapping tried is still offered', async () => {
+    const { fetcher } = fakeModel([JSON.stringify({ try: good }), '']);
+    const p = await improveMapping({ wb, current: broken, id: 'x', title: 'x', call: { key: 'k', fetcher } });
+    expect(p.stopped).toBe('reply');
+    expect(p.after!.games).toBe(105);
+    expect(p.mapping!.notes!.at(-1)).toMatch(/stopped early/);
+  });
+
+  it('cancelling keeps the best mapping tried, and skips the rules and format', async () => {
+    const ctl = new AbortController();
+    let n = 0;
+    const fetcher = (async (_url: string, init: RequestInit) => {
+      if (n++ === 0) return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ try: good }) } }] }), { status: 200 });
+      setTimeout(() => ctl.abort(), 10);
+      return new Promise((_, reject) => init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))));
+    }) as unknown as typeof fetch;
+    const p = await aiSetup({ wb, current: broken, id: 'x', title: 'x', call: { key: 'k', fetcher, signal: ctl.signal } });
+    expect(p.stopped).toBe('cancelled');
+    expect(p.error).toBeUndefined();
+    expect(p.after!.games).toBe(105);
+    expect(n).toBe(2);
   });
 
   it('out of steps, the best mapping it tried is offered', async () => {

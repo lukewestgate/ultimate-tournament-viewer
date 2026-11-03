@@ -80,6 +80,7 @@ export function AiTask<R extends AiOutcome>({
   const [result, setResult] = useState<R | undefined>();
   const [started, setStarted] = useState(0);
   const [ms, setMs] = useState(0);
+  const [stopping, setStopping] = useState(false);
   const ctl = useRef<AbortController | undefined>(undefined);
 
   const start = () => {
@@ -90,6 +91,7 @@ export function AiTask<R extends AiOutcome>({
     setStarted(t0);
     setMs(0);
     setResult(undefined);
+    setStopping(false);
     setProgress({ phase: 'reading', attempt: 1, thinking: 0, writing: 0 });
     setState('running');
     const call: AiCall = { key: store.app.aiKey ?? '', model: store.app.aiModel, signal: me.signal };
@@ -136,12 +138,20 @@ export function AiTask<R extends AiOutcome>({
         checking={checking}
         typical={typical}
         slowAfter={slowAfter}
+        stopping={stopping}
         onCancel={() => {
-          ctl.current?.abort();
-          ctl.current = undefined;
-          setMs(Date.now() - started);
-          setResult({ error: 'Cancelled.', errorKind: 'cancelled' } as R);
-          setState('done');
+          // Stop, then show what the job had so far (it returns the best it tried); only if it doesn't come back
+          // promptly is it dropped.
+          const me = ctl.current;
+          me?.abort();
+          setStopping(true);
+          setTimeout(() => {
+            if (ctl.current !== me) return;
+            ctl.current = undefined;
+            setMs(Date.now() - started);
+            setResult({ error: 'Cancelled.', errorKind: 'cancelled' } as R);
+            setState('done');
+          }, 5000);
         }}
       />
     );
@@ -194,6 +204,7 @@ function AiProgressView({
   checking,
   typical,
   slowAfter,
+  stopping,
   onCancel,
 }: {
   progress: AiProgress;
@@ -201,6 +212,7 @@ function AiProgressView({
   checking: boolean;
   typical: string;
   slowAfter: number;
+  stopping: boolean;
   onCancel: () => void;
 }) {
   const order: AiPhase[] = ['reading', 'waiting', 'thinking', 'writing', 'checking'];
@@ -224,6 +236,8 @@ function AiProgressView({
   if (checking) steps.push({ key: 'check', s: st('checking'), label: 'Checking it against the sheet…' });
   const slow = ms > slowAfter;
   const did = p.steps ?? [];
+  // Once a mapping has been tried, stopping keeps the best one rather than throwing the run away.
+  const keeps = did.some((x) => /^(Tried a mapping|Answered):/.test(x));
   return (
     <div className="stack ai-run" aria-live="polite">
       <div className="ai-run-head">
@@ -253,8 +267,8 @@ function AiProgressView({
       <p className={`small ${slow ? 'ai-slow' : 'muted'}`} style={{ margin: 0 }}>
         {slow ? `Taking longer than usual. Some models think for a few minutes; we stop waiting for any one answer at ${clock(TIMEOUTS.total)}.` : typical}
       </p>
-      <button className="btn" onClick={onCancel}>
-        Cancel
+      <button className="btn" onClick={onCancel} disabled={stopping}>
+        {stopping ? 'Stopping…' : keeps ? 'Stop and show the best so far' : 'Cancel'}
       </button>
     </div>
   );
