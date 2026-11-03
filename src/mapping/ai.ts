@@ -7,7 +7,7 @@ import { emptyCorrections } from './types';
 import { validateMapping } from './validate';
 import { extract } from '../extract/extract';
 import { qualityCheck, problemsOnly, mergeSuggestions } from '../extract/quality';
-import { futureSlotKeys } from '../format/infer';
+import { futureSlotKeys, inferFormat } from '../format/infer';
 import { ALL_TIEBREAKS } from '../engine/rulesPresets';
 
 export const DEFAULT_MODEL = 'deepseek/deepseek-v4.1-flash';
@@ -575,6 +575,8 @@ export interface AiProgress extends StreamProgress {
   steps?: string[];
   /** The last answer didn't fit the sheet and was sent back. */
   retry?: boolean;
+  /** Which part of a longer job this is ("Reading the rules"). */
+  stage?: string;
 }
 
 const isBetter = (a: Stats, b: Stats) => a.problems.length < b.problems.length || (a.problems.length === b.problems.length && a.withTeams >= b.withTeams && a.games > 0);
@@ -811,6 +813,78 @@ async function aiFormatInner(call: AiCall, t: Tournament, format: Format, formul
     keys.push(k);
   }
   return { format: next, usage, filled, asked: unknown.length, keys };
+}
+
+/** Cell formulas that look like the TD's progression logic (lookups into pool ranks), for the format job. */
+export function progressionFormulas(wb: Workbook): string[] {
+  const out: string[] = [];
+  for (const tab of wb.tabs)
+    for (const [k, f] of Object.entries(tab.formulas ?? {})) {
+      if (!/rank|vlookup|index|match/i.test(f)) continue;
+      const [r, c] = k.split(',').map(Number);
+      out.push(`${tab.name}!${colName(c)}${r + 1}: =${f}`.slice(0, 200));
+    }
+  return out;
+}
+
+export interface AiSetup extends AiProposal {
+  /** The format to use with the AI's mapping, with the slots the AI filled. */
+  format?: Format;
+  /** The AI read the rules (in the mapping or from the info text). */
+  rulesFromAi: boolean;
+  /** Unknown format slots: how many there were and how many the AI filled. */
+  slots?: { asked: number; filled: number };
+}
+
+/**
+ * "Let AI set this up": improve the mapping, then on what it reads, read the rules from the info text (unless the user set
+ * them, or the mapping answer already had them) and fill the format slots nothing else could work out. The later jobs are
+ * best effort: if they fail, the mapping is still offered and the failure is in the steps. Never throws.
+ */
+export async function aiSetup(args: Parameters<typeof improveMapping>[0] & { format?: Format }): Promise<AiSetup> {
+  // Each part says which it is; the later jobs show the steps so far.
+  const staged = (stage: string) => args.onProgress && ((x: AiProgress) => args.onProgress!({ ...x, stage, steps: x.steps ?? res.steps }));
+  const p = await improveMapping({ ...args, onProgress: staged('Mapping the sheet') });
+  const res: AiSetup = { ...p, steps: [...p.steps], rulesFromAi: false };
+  if (!p.mapping) return res;
+  const add = (u?: Usage) => {
+    if (!u) return;
+    res.usage = { promptTokens: res.usage.promptTokens + u.promptTokens, completionTokens: res.usage.completionTokens + u.completionTokens, cost: res.usage.cost + u.cost };
+  };
+  try {
+    const mapping: Mapping = { ...p.mapping };
+    res.mapping = mapping;
+    const read = () => extract(args.wb, mapping, { id: args.id, sheetUrl: '', now: args.now });
+    let t = read();
+    const current = args.current.rules;
+    res.rulesFromAi = mapping.rules?.source === 'ai' && JSON.stringify(mapping.rules) !== JSON.stringify(current);
+    const infoText = t.info.flatMap((x) => [x.title, ...x.lines]).join('\n');
+    if (current?.source !== 'user' && !res.rulesFromAi && infoText.trim()) {
+      const r = await aiRules(args.call, infoText, staged('Reading the rules'));
+      add(r.usage);
+      if (r.errorKind === 'cancelled') throw new AiError('cancelled', 'Cancelled.');
+      if (r.rules) {
+        mapping.rules = r.rules;
+        res.rulesFromAi = true;
+        res.steps.push(`Read the rules: win ${r.rules.points.win}, draw ${r.rules.points.draw}, loss ${r.rules.points.loss}${r.rules.tiebreaks.length ? `, ${plural(r.rules.tiebreaks.length, 'tie-break')}` : ''}`);
+        t = read();
+      } else res.steps.push(`Couldn’t read the rules: ${r.error ?? 'no answer'}`);
+    }
+    const base = inferFormat(t, args.format, { template: mapping.template });
+    res.format = base;
+    const f = await aiFormat(args.call, t, base, progressionFormulas(args.wb), t.info.map((x) => [x.title, ...x.lines].join('\n')).join('\n'), staged('Working out the format'));
+    add(f.usage);
+    if (f.errorKind === 'cancelled') throw new AiError('cancelled', 'Cancelled.');
+    if (f.error) res.steps.push(`Couldn’t work out the format: ${f.error}`);
+    else if (f.asked) {
+      res.slots = { asked: f.asked, filled: f.filled };
+      if (f.format) res.format = f.format;
+      res.steps.push(`Worked out the format: filled ${f.filled} of ${plural(f.asked, 'unknown slot')}`);
+    }
+  } catch (e) {
+    return { ...res, mapping: undefined, format: undefined, error: (e as Error).message || String(e), errorKind: errorKind(e) };
+  }
+  return res;
 }
 
 export interface KeyCheck {

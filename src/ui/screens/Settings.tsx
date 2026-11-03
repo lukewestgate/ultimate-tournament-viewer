@@ -9,7 +9,7 @@ import { editFormat, editMapping, shareLink, copyOrShare } from '../mappingEdit'
 import { mergeSuggestions } from '../../extract/quality';
 import { pointsDiffPreset, ukuPreset, TIEBREAK_LABEL, ALL_TIEBREAKS, UNCOMPUTABLE } from '../../engine/rulesPresets';
 import { divKey, type EngineLevel, type Rules } from '../../model/types';
-import { improveMapping, aiRules, aiFormat } from '../../mapping/ai';
+import { aiSetup, aiRules, aiFormat, progressionFormulas } from '../../mapping/ai';
 import { AiSteps, AiTask, UsageLine } from '../AiTask';
 import { describeSource } from './FormatEditor';
 import { teamKey } from '../../store/settings';
@@ -477,7 +477,7 @@ function AiButton() {
   );
 }
 
-/** Runs the AI mapper and shows the before/after comparison; never applies silently. */
+/** Runs the AI mapper, then the rules and format jobs, and shows the before/after comparison; never applies silently. */
 export function AiRun() {
   const c = useT();
   const overlay = useOverlay();
@@ -485,15 +485,15 @@ export function AiRun() {
     <AiTask
       intro={
         <p className="small muted" style={{ margin: 0 }}>
-          The first rows of each visible tab and the current reading are sent to OpenRouter with your key. The AI can ask to see more of the sheet and test its ideas before answering. Only a description of where things are comes back; you choose whether to use it. Usually about a cent.
+          The first rows of each visible tab and the current reading are sent to OpenRouter with your key. The AI can ask to see more of the sheet and test its ideas before answering, then reads the rules and works out how teams progress. Only a description of where things are comes back; you choose whether to use it. Usually a cent or two.
         </p>
       }
       typical="This usually takes 1–3 minutes: the AI looks around the sheet and tests its mapping before answering."
       slowAfter={240_000}
       run={({ call, onProgress }) => {
         const wb = c.rt.workbook;
-        if (!wb) return Promise.resolve({ before: { games: 0, withTeams: 0, teams: 0, days: 0, divisions: 0, pools: 0, problems: [], aliases: 0 }, better: false, usage: { promptTokens: 0, completionTokens: 0, cost: 0 }, attempts: 0, steps: [], error: 'The sheet isn’t loaded yet. Wait for it to open, then try again.', errorKind: 'reply' as const });
-        return improveMapping({ wb, current: c.p.mapping, id: c.id, title: c.t.title, call, onProgress });
+        if (!wb) return Promise.resolve({ before: { games: 0, withTeams: 0, teams: 0, days: 0, divisions: 0, pools: 0, problems: [], aliases: 0 }, better: false, usage: { promptTokens: 0, completionTokens: 0, cost: 0 }, attempts: 0, steps: [], rulesFromAi: false, error: 'The sheet isn’t loaded yet. Wait for it to open, then try again.', errorKind: 'reply' as const });
+        return aiSetup({ wb, current: c.p.mapping, format: c.p.format, id: c.id, title: c.t.title, call, onProgress });
       }}
       done={(p, { ms }) => {
         const row = (label: string, a: string | number, b: string | number, good?: boolean) => (
@@ -504,11 +504,14 @@ export function AiRun() {
           </tr>
         );
         const a = p.after;
+        const points = (r?: Rules) => (r ? `${r.points.win}·${r.points.draw}·${r.points.loss}` : '–');
+        const open = p.slots && p.slots.asked - p.slots.filled;
         const same = a && a.games === p.before.games && a.withTeams === p.before.withTeams && a.teams === p.before.teams && a.problems.length === p.before.problems.length;
+        const extras = p.rulesFromAi || Boolean(p.slots?.filled);
         return (
           <div className="stack">
-            <span className={`tag ${same ? 'quiet' : p.better ? 'win' : 'warn'}`} style={{ alignSelf: 'flex-start' }}>
-              {same ? 'Same result as the current reading' : p.better ? 'Better than the current reading' : 'Not better than the current reading'}
+            <span className={`tag ${same && !extras ? 'quiet' : p.better ? 'win' : 'warn'}`} style={{ alignSelf: 'flex-start' }}>
+              {same ? (extras ? 'Same games and teams; rules or format filled in' : 'Same result as the current reading') : p.better ? 'Better than the current reading' : 'Not better than the current reading'}
             </span>
             <table className="cmp">
               <thead>
@@ -525,6 +528,8 @@ export function AiRun() {
                 {row('Merged names', p.before.aliases, a?.aliases ?? '–')}
                 {row('Divisions', p.before.divisions, a?.divisions ?? '–')}
                 {row('Problems', p.before.problems.length, a?.problems.length ?? '–', a && a.problems.length !== p.before.problems.length ? a.problems.length < p.before.problems.length : undefined)}
+                {p.rulesFromAi && row('Points (W·D·L)', points(c.t.rules), points(p.mapping?.rules))}
+                {p.slots && row('Unknown slots', p.slots.asked, open!, open !== p.slots.asked ? true : undefined)}
               </tbody>
             </table>
             {a?.problems.length ? (
@@ -557,7 +562,7 @@ export function AiRun() {
                 className="btn primary"
                 disabled={!p.mapping}
                 onClick={() => {
-                  store.runtime(c.id).setMapping(p.mapping);
+                  store.runtime(c.id).setMapping(p.mapping, p.format);
                   overlay.closeSheet();
                   overlay.toast('Using the AI’s reading.');
                 }}
@@ -645,8 +650,7 @@ function AiFormatRun() {
     <AiTask
       checking={false}
       run={({ call, onProgress }) => {
-        const formulas: string[] = [];
-        for (const tab of c.rt.workbook?.tabs ?? []) for (const [k, f] of Object.entries(tab.formulas ?? {})) if (/rank|vlookup|index|match/i.test(f)) formulas.push(`${tab.name}!${k}: =${f}`.slice(0, 200));
+        const formulas = c.rt.workbook ? progressionFormulas(c.rt.workbook) : [];
         const formatText = c.t.info.map((x) => [x.title, ...x.lines].join('\n')).join('\n');
         return aiFormat(call, c.t, c.p.format, formulas, formatText, onProgress);
       }}

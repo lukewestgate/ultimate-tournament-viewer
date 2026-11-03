@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildMappingPrompt, callModel, improveMapping, lookCells, parseMappingReply, parseRange, sampleWorkbook, stats, type AiProgress } from '../src/mapping/ai';
+import { aiSetup, buildMappingPrompt, callModel, improveMapping, lookCells, parseMappingReply, parseRange, sampleWorkbook, stats, type AiProgress } from '../src/mapping/ai';
 import { detectMapping } from '../src/mapping/detect';
 import { extract } from '../src/extract/extract';
 import { emptyMapping } from '../src/mapping/types';
@@ -117,6 +117,39 @@ describe('AI mapper', () => {
     expect(calls[2].body.messages.at(-1)!.content).toMatch(/Your next reply is the last/);
     expect(p.after!.games).toBe(105);
     expect(p.mapping!.notes).toContain('The AI ran out of steps; this is the best mapping it tried.');
+  });
+
+  it('set up with AI: maps the sheet, then reads the rules and fills the format, adding up the cost', async () => {
+    const wb2 = loadFixture('outdoor-2');
+    const m = detectMapping(wb2).mapping;
+    const prompts: string[] = [];
+    const reply = (content: string) => new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 1000, completion_tokens: 100 } }), { status: 200 });
+    const fetcher = (async (_url: string, init: RequestInit) => {
+      const msgs = (JSON.parse(String(init.body)) as { messages: { content: string }[] }).messages;
+      const sys = msgs[0].content;
+      prompts.push(sys.slice(0, 30));
+      if (sys.startsWith('You map')) return reply(JSON.stringify({ mapping: m, notes: ['Looks right'] }));
+      if (sys.startsWith('Read ultimate')) return reply(JSON.stringify({ points: { win: 3, draw: 1, loss: 0 }, tiebreaks: ['h2hWins', 'diff'] }));
+      const keys = msgs[1].content.split('Slots to fill:\n')[1].split('\n').map((l) => l.split(' ')[0]);
+      return reply(JSON.stringify({ sources: Object.fromEntries(keys.map((k) => [k, { kind: 'seed', seed: 1 }])) }));
+    }) as unknown as typeof fetch;
+    const stages: (string | undefined)[] = [];
+    const p = await aiSetup({ wb: wb2, current: m, id: 'x', title: 'x', call: { key: 'k', fetcher }, onProgress: (x) => stages.push(x.stage) });
+    expect(prompts.map((x) => x.split(' ')[0])).toEqual(['You', 'Read', 'Work']);
+    expect(p.error).toBeUndefined();
+    expect(p.rulesFromAi).toBe(true);
+    expect(p.mapping!.rules).toMatchObject({ points: { win: 3 }, source: 'ai' });
+    expect(p.slots).toEqual({ asked: 2, filled: 2 });
+    expect(Object.values(p.format!.divisions).flatMap((d) => Object.values(d.sources)).filter((e) => e.origin === 'ai')).toHaveLength(2);
+    expect(p.steps.slice(-2)).toEqual(['Read the rules: win 3, draw 1, loss 0, 2 tie-breaks', 'Worked out the format: filled 2 of 2 unknown slots']);
+    expect(p.usage.promptTokens).toBe(3000);
+    expect([...new Set(stages)]).toEqual(['Mapping the sheet', 'Reading the rules', 'Working out the format']);
+    // Rules the user set aren't asked about again.
+    prompts.length = 0;
+    const mine = { ...m, rules: { points: { win: 2, draw: 1, loss: 0 }, tiebreaks: [], drawsAllowed: { pool: true, placement: false }, source: 'user' as const } };
+    const q = await aiSetup({ wb: wb2, current: mine, id: 'x', title: 'x', call: { key: 'k', fetcher } });
+    expect(prompts.map((x) => x.split(' ')[0])).toEqual(['You', 'Work']);
+    expect(q.mapping!.rules).toBe(mine.rules);
   });
 
   it('a worse mapping is not offered as better', async () => {

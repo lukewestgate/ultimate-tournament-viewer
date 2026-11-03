@@ -229,6 +229,7 @@ function AiProgressView({
       <div className="ai-run-head">
         <span className="ai-pulse" aria-hidden="true" />
         <b>Asking AI</b>
+        {p.stage && <span className="small muted">{p.stage}</span>}
         <span style={{ flex: 1 }} />
         <span className="d ai-clock" aria-label={`${Math.floor(ms / 1000)} seconds`}>
           {clock(ms)}
