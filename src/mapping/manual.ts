@@ -37,6 +37,9 @@ export const ROLE_LABEL: Record<string, string> = {
   pts: 'Points',
   rank: 'Rank',
   sep: 'Separator (v)',
+  bracket: 'Bracket game?',
+  note: 'Note',
+  newSeed: 'New seed',
 };
 
 /** Role colours (Spec components): colour + text label, never colour alone. */
