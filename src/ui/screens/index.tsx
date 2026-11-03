@@ -15,6 +15,7 @@ const AppSettings = lazy(() => import('./AppSettings').then((m) => ({ default: m
 const Diagnostics = lazy(() => import('./Diagnostics').then((m) => ({ default: m.Diagnostics })));
 const Manual = lazy(() => import('./Manual').then((m) => ({ default: m.Manual })));
 const FormatEditor = lazy(() => import('./FormatEditor').then((m) => ({ default: m.FormatEditor })));
+const Review = lazy(() => import('./Review').then((m) => ({ default: m.Review })));
 
 // Rarely used screens are split out of the main bundle.
 export interface ScreenProps {
@@ -30,5 +31,5 @@ export const screens: {
   Home,
   Add,
   AppSettings,
-  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen, whatif: WhatIf, settings: Settings, diagnostics: Diagnostics, manual: Manual, format: FormatEditor },
+  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen, whatif: WhatIf, settings: Settings, diagnostics: Diagnostics, manual: Manual, format: FormatEditor, review: Review },
 };

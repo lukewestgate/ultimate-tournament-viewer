@@ -265,7 +265,7 @@ export function Banners() {
             Fix with AI
           </button>
         )}
-        <button className="bn-solid" onClick={() => navigate(tHref(c.id, 'settings'))}>
+        <button className="bn-solid" onClick={() => navigate(tHref(c.id, 'review'))}>
           Check
         </button>
         <button className="ib bn-x" aria-label="Dismiss" onClick={() => dismiss(`problems:${problems.length}`)}>

@@ -107,7 +107,7 @@ function RouteView({ route }: { route: Route }) {
 }
 
 /** Screens drawn as sub-pages with a back header instead of the tab shell. */
-const SUB_PAGES: string[] = ['settings', 'diagnostics', 'manual', 'format'];
+const SUB_PAGES: string[] = ['settings', 'diagnostics', 'manual', 'format', 'review'];
 
 function TournamentScreen({ route }: { route: Extract<Route, { name: 'tournament' }> }) {
   const c = useT();

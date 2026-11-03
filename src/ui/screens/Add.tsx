@@ -191,8 +191,8 @@ function Preview() {
           <button className="btn" onClick={() => overlay.openSheet(<TeamPicker compact />, { title: 'Pick your team(s)' })}>
             Pick your team(s)
           </button>
-          <a className="btn" href={tHref(c.id, 'settings')}>
-            Check how it’s read
+          <a className="btn" href={tHref(c.id, 'review')}>
+            Check what was read
           </a>
         </div>
         {problems.length === 0 && <AiCta />}

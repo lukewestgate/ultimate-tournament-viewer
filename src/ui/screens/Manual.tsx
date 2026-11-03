@@ -148,9 +148,9 @@ export function Manual(_: ScreenProps) {
     setSeedStep({});
   };
   const save = () => {
-    store.runtime(c.id).setMapping({ ...draft, mode: 'manual' });
-    overlay.toast('Saved.');
-    navigate(tHref(c.id, 'settings'));
+    store.runtime(c.id).setMapping({ ...draft, mode: 'manual' }, undefined, 'Before your manual changes');
+    overlay.toast('Saved. Here’s what changed.');
+    navigate(tHref(c.id, 'review', 'h0'));
   };
   const question: Record<Target, string> = {
     list: 'Which tab has the games?',
@@ -414,7 +414,7 @@ export function Manual(_: ScreenProps) {
             <button
               className="btn"
               onClick={async () => {
-                store.runtime(c.id).setMapping({ ...draft, mode: 'manual' });
+                store.runtime(c.id).setMapping({ ...draft, mode: 'manual' }, undefined, 'Before your manual changes');
                 await copyOrShare(await shareLink(c), c.t.title, overlay.toast);
               }}
             >

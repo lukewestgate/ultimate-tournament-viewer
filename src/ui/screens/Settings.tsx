@@ -89,6 +89,16 @@ function SettingsPage() {
         </section>
       )}
 
+      <section className="card set-list">
+        <a className="set-row nav" href={tHref(c.id, 'review')}>
+          <span className="set-label">
+            <b>Check the reading</b>
+            <small>Every game, team and pool as read, the sheet cells behind them, and anything that looks odd</small>
+          </span>
+          <IChevronRight size={18} />
+        </a>
+      </section>
+
       <AiCta problems={problems.length} />
 
       <span className="lbl-head">Quick corrections</span>
@@ -214,7 +224,7 @@ function SettingsPage() {
         <button
           className="set-row nav"
           onClick={() => {
-            store.runtime(c.id).setMapping(undefined);
+            store.runtime(c.id).setMapping(undefined, undefined, 'Before going back to automatic');
             overlay.toast('Read again automatically.');
           }}
         >
@@ -544,6 +554,19 @@ export function AiRun({ autoStart = false }: { autoStart?: boolean }) {
               </div>
             ) : null}
             <UsageLine usage={p.usage} ms={ms} />
+            {p.mapping && (
+              <button
+                className="btn"
+                onClick={() => {
+                  // Kept until used or discarded, so it can be checked game by game against the current reading.
+                  store.update(c.id, { proposal: { at: Date.now(), label: 'AI suggestion', mapping: p.mapping, format: p.format } });
+                  overlay.closeSheet();
+                  navigate(tHref(c.id, 'review', 'proposal'));
+                }}
+              >
+                Compare in detail before deciding
+              </button>
+            )}
             <div className="two-btns">
               <button className="btn" onClick={() => overlay.closeSheet()}>
                 Discard
@@ -552,9 +575,10 @@ export function AiRun({ autoStart = false }: { autoStart?: boolean }) {
                 className="btn primary"
                 disabled={!p.mapping}
                 onClick={() => {
-                  store.runtime(c.id).setMapping(p.mapping, p.format);
+                  store.runtime(c.id).setMapping(p.mapping, p.format, 'Before AI changes');
+                  store.update(c.id, { proposal: undefined });
                   overlay.closeSheet();
-                  overlay.toast('Using the AI’s reading.');
+                  overlay.toast('Using the AI’s reading. Compare it with the one before in Check the reading.');
                 }}
               >
                 Use

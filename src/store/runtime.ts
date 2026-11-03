@@ -9,6 +9,9 @@ import { applyHotTabs, backoffDelay, FULL_EVERY, HOT_EVERY, hotTabs, nextRefresh
 import { loadTournament, saveTournament, type TournamentSettings } from './settings';
 import { fixtureUrl } from './fixtures';
 
+/** Earlier readings kept per tournament. */
+const HISTORY = 5;
+
 export interface RuntimeState {
   id: string;
   phase: 'idle' | 'loading' | 'ready' | 'error';
@@ -182,10 +185,14 @@ export class TournamentRuntime {
     saveTournament({ ...s, summary: summarize(p, this.state.lastSuccess, undefined, s.primary) });
   }
 
-  /** Save a new mapping (manual edit, AI, shared link) and re-read. */
-  setMapping(mapping: Mapping | undefined, format?: Format) {
+  /**
+   * Save a new mapping (manual edit, AI, shared link) and re-read. With `remember`, the reading it replaces is kept in
+   * the history under that label, so the two can be compared or the change undone.
+   */
+  setMapping(mapping: Mapping | undefined, format?: Format, remember?: string) {
     const s = this.settings();
-    saveTournament({ ...s, mapping, format: format ?? (mapping ? s.format : undefined) });
+    const history = remember ? [{ at: Date.now(), label: remember, mapping: s.mapping, format: s.format }, ...(s.history ?? [])].slice(0, HISTORY) : s.history;
+    saveTournament({ ...s, mapping, format: format ?? (mapping ? s.format : undefined), history });
     this.reprocess();
   }
 

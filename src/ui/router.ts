@@ -19,9 +19,10 @@ export type TournamentTab =
   | 'manual'
   | 'format'
   | 'whatif'
-  | 'standings';
+  | 'standings'
+  | 'review';
 
-const TABS: TournamentTab[] = ['now', 'schedule', 'teams', 'team', 'pools', 'brackets', 'info', 'settings', 'diagnostics', 'manual', 'format', 'whatif', 'standings'];
+const TABS: TournamentTab[] = ['now', 'schedule', 'teams', 'team', 'pools', 'brackets', 'info', 'settings', 'diagnostics', 'manual', 'format', 'whatif', 'standings', 'review'];
 
 /** Hash routes: #/t/<id>/now, #/t/<id>/team/<key>, #/add, #/settings. */
 export function parseHash(hash: string): Route {

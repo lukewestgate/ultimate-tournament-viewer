@@ -31,6 +31,19 @@ export interface TournamentSettings {
   dismissed?: string[];
   /** Summary kept for the home screen without loading the workbook. */
   summary?: TournamentSummary;
+  /** Earlier readings, newest first, kept when a reading is replaced so the two can be compared or undone. */
+  history?: SavedReading[];
+  /** An AI suggestion not used yet, kept so it can be compared in detail before deciding. */
+  proposal?: SavedReading;
+}
+
+/** A mapping (undefined = read automatically) and its format, as they were at some point. */
+export interface SavedReading {
+  at: number;
+  /** What this reading is ("Before AI changes", "AI suggestion"). */
+  label: string;
+  mapping?: Mapping;
+  format?: Format;
 }
 
 export interface TournamentSummary {
