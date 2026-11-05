@@ -5,7 +5,7 @@ import { engineLevel, gameKey, inferFormat, poolSlotKey } from '../src/format/in
 import { validateFormat } from '../src/format/validate';
 import { resolve, type EffResult } from '../src/engine/resolve';
 import { buildBoards } from '../src/engine/bracket';
-import { buildView } from '../src/engine/view';
+import { buildView, finalSections } from '../src/engine/view';
 import { feedsOf } from '../src/ui/outlook';
 import { resultOf } from '../src/engine/standings';
 import type { Format, Game, Tournament } from '../src/model/types';
@@ -127,10 +127,50 @@ describe('format inference with power pools after crossovers', () => {
     expect(places.filter((p) => p.place >= 17 && p.place <= 20).map((p) => p.team)).toEqual(['Nottingham 1', 'Bristol 1', 'York 1', 'Imperial 1']);
   });
 
+  it('a bracket board covers the places of the pool it feeds', () => {
+    const board = buildBoards(t, format).find((b) => b.positions.includes(18))!;
+    expect(board.positions).toContain(20);
+    expect(board.positions[0]).toBe(17);
+  });
+
   it('a pool with a gap in its seeds does not decide places', () => {
     const women = load('outdoor-1').format.divisions['Women'];
     expect(women.sources[poolSlotKey('F', 'F1')].source.kind).toBe('gameResult');
     expect(women.places![9].source.kind).toBe('gameResult');
+  });
+});
+
+describe('final standings as the sheet fills in', () => {
+  const { t, format } = load('outdoor-2');
+  const now = Date.UTC(2027, 0, 1);
+  const sections = (standings: Tournament['finalStandings']) => finalSections(buildView({ ...t, finalStandings: standings }, format, { now }), () => true);
+  const full = t.finalStandings!;
+  const blank = (s: NonNullable<Tournament['finalStandings']>[number]) => ({ ...s, team: undefined, division: undefined });
+
+  it('a full sheet is shown as it is', () => {
+    const [s] = sections(full);
+    expect(s.sub).toBeUndefined();
+    expect(s.rows.map((r) => r.team)).toEqual(full.map((x) => x.team));
+  });
+
+  it('places the sheet leaves blank come from the engine, whichever places those are', () => {
+    const result = sections(full.map((s, i) => (i < 10 ? blank(s) : s)));
+    expect(result).toHaveLength(1);
+    expect(result[0].sub).toBe('Partly projected from the brackets');
+    expect(result[0].rows.map((r) => r.team)).toEqual(full.map((x) => x.team));
+  });
+
+  it('a team the sheet has placed is not projected into a second place', () => {
+    const swapped = full.map((s, i) => (i === 0 ? blank(s) : i === 1 ? { ...s, team: full[0].team } : s));
+    const [s] = sections(swapped);
+    expect(s.rows[0].team).toBeUndefined();
+    expect(s.rows.filter((r) => r.team === full[0].team)).toHaveLength(1);
+  });
+
+  it('an empty sheet list is all projection', () => {
+    const [s] = sections(full.map(blank));
+    expect(s.sub).toBe('Projected from the brackets');
+    expect(s.rows).toHaveLength(full.length);
   });
 });
 

@@ -213,6 +213,63 @@ export function pathsAhead(view: View, team: string, division: string | undefine
   return build(next, side, depth);
 }
 
+export interface FinalRow {
+  place: number;
+  team?: string;
+  division?: string;
+  label?: string;
+  possible?: string[];
+}
+
+export interface FinalSection {
+  title: string;
+  sub?: string;
+  division?: string;
+  rows: FinalRow[];
+}
+
+/**
+ * Final standings by section: the sheet's where it names a team, the engine's (R5) for every other place.
+ * Sheets fill in over the last day, so a place the sheet leaves blank takes the engine's team, or stays open.
+ */
+export function finalSections(view: View, inDiv: (d: string | undefined) => boolean): FinalSection[] {
+  const sections: FinalSection[] = [];
+  // Blank rows have no team to give them a division, so they stay with the row above.
+  const by = new Map<string, NonNullable<Tournament['finalStandings']>>();
+  let key = '';
+  for (const s of view.t.finalStandings ?? []) {
+    key = s.section ?? s.division ?? key;
+    by.set(key, [...(by.get(key) ?? []), s]);
+  }
+  for (const [title, list] of by) {
+    const rows = list.filter((s) => !s.team || inDiv(s.division));
+    const named = rows.filter((s) => s.team);
+    if (!named.length) continue;
+    // Most rows agree on the division; a misspelt team name has none, or another's.
+    const count = (d: string | undefined) => named.filter((s) => s.division === d).length;
+    const division = named.map((s) => s.division).reduce((a, b) => (count(b) > count(a) ? b : a));
+    const engine = view.places.get(divKey(division)) ?? [];
+    const taken = new Set(named.map((s) => s.team));
+    const sheetMin = Math.min(...rows.map((s) => s.place));
+    const engineMin = Math.min(...engine.map((p) => p.place));
+    let projected = false;
+    const out = rows.flatMap((s): FinalRow[] => {
+      if (s.team) return [{ place: s.place, team: s.team, division: s.division }];
+      const e = engine.find((p) => p.place - engineMin === s.place - sheetMin);
+      if (!e) return [];
+      projected = true;
+      return [{ place: s.place, team: e.team && !taken.has(e.team) ? e.team : undefined, division, label: e.label, possible: e.possible }];
+    });
+    sections.push({ title, sub: projected ? 'Partly projected from the brackets' : undefined, division, rows: out });
+  }
+  const covered = new Set(sections.map((s) => divKey(s.division)));
+  for (const [d, list] of view.places) {
+    if (covered.has(d) || !inDiv(d || undefined)) continue;
+    sections.push({ title: d, sub: 'Projected from the brackets', division: d || undefined, rows: list.map((p) => ({ ...p, division: d || undefined })) });
+  }
+  return sections;
+}
+
 /** Pretty place relative to the division's first position (101 -> 1st). */
 export function relativePlace(view: View, division: string | undefined, place: number): number {
   const list = view.places.get(divKey(division));

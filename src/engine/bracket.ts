@@ -74,9 +74,14 @@ export function buildBoards(t: Tournament, format: Format): Board[] {
       }
       const lo = blocks.size > 1 ? minPos + b * 8 : -Infinity;
       const hi = blocks.size > 1 ? lo + 7 : Infinity;
-      const positions = [...new Set(gs.flatMap((g) => [positionOf(g, 0, t.pools)?.n, positionOf(g, 1, t.pools)?.n]).filter((x): x is number => x !== undefined && x >= lo && x <= hi))].sort((x, y) => x - y);
-      const from = positions.length ? positions[0] - minPos + 1 : 1;
-      const to = positions.length ? positions[positions.length - 1] - minPos + 1 : gs.length * 2;
+      const positions = [...new Set(gs.flatMap((g) => [positionOf(g, 0, t.pools)?.n, positionOf(g, 1, t.pools)?.n]).filter((x): x is number => x !== undefined && x >= lo && x <= hi))];
+      // A pool these games feed finishes the board: its places count, even for a seed that played none of them.
+      const fed = new Set(Object.entries(f?.sources ?? {}).filter(([k, e]) => k.startsWith('pool:') && e.source.kind === 'gameResult' && ids.has(e.source.game)).map(([k]) => k.split(':')[1]));
+      for (const [n, e] of Object.entries(f?.places ?? {})) if (e.source.kind === 'poolFinish' && fed.has(e.source.pool) && !positions.includes(Number(n))) positions.push(Number(n));
+      positions.sort((x, y) => x - y);
+      const first = Math.min(minPos, positions[0] ?? minPos);
+      const from = positions.length ? positions[0] - first + 1 : 1;
+      const to = positions.length ? positions[positions.length - 1] - first + 1 : gs.length * 2;
       const title = positions.length ? `${ord(from)}–${ord(to)}` : 'Placement games';
       boards.push({ division: d, title, from, to, rounds: rounds.filter(Boolean), positions });
     }

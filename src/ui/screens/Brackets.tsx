@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { buildBoards, type Board } from '../../engine/bracket';
-import { pathsAhead, relativePlace, type GameView, type PathNode } from '../../engine/view';
+import { finalSections, pathsAhead, relativePlace, type GameView, type PathNode } from '../../engine/view';
 import { divKey } from '../../model/types';
 import { parseTeamKey } from '../../store/settings';
 import { withoutTag } from '../../extract/names';
@@ -823,29 +823,10 @@ function FinalsList({ divisions }: { divisions: (string | undefined)[] }) {
   );
 }
 
-interface StandingRow {
-  place: number;
-  team?: string;
-  division?: string;
-  label?: string;
-  possible?: string[];
-}
-
-/** Final standings: the sheet's, else the engine's (R5). */
+/** Final standings: the sheet's, else the engine's (R5), place by place. */
 export function FinalStandings({ quiet }: { quiet?: boolean } = {}) {
   const c = useT();
-  const sheet = (c.t.finalStandings ?? []).filter((s) => c.inDiv(s.division) && s.team);
-  const sections: { title: string; sub?: string; division?: string; rows: StandingRow[] }[] = [];
-  if (sheet.length) {
-    const by = new Map<string, typeof sheet>();
-    for (const s of sheet) by.set(s.section ?? s.division ?? '', [...(by.get(s.section ?? s.division ?? '') ?? []), s]);
-    for (const [title, list] of by) sections.push({ title, division: list[0].division, rows: list.map((s) => ({ place: s.place, team: s.team, division: s.division })) });
-  } else {
-    for (const [d, list] of c.view.places) {
-      if (!c.inDiv(d || undefined)) continue;
-      sections.push({ title: d, sub: 'Projected from the brackets', division: d || undefined, rows: list.map((p) => ({ ...p, division: d || undefined })) });
-    }
-  }
+  const sections = finalSections(c.view, c.inDiv);
   if (!sections.length) return quiet ? null : <Empty title="No final standings yet" body="They appear when the sheet lists them or the brackets are decided." />;
   const notPlayed = c.view.games.filter((v) => v.g.stage === 'placement' && v.status === 'notPlayed' && c.inDiv(v.g.division));
   return (

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { GameView } from '../../engine/view';
-import { possibleGames, teamGames } from '../../engine/view';
+import { finalSections, possibleGames, teamGames } from '../../engine/view';
 import { parseTeamKey, teamKey } from '../../store/settings';
 import { withoutTag, regionTag } from '../../extract/names';
 import { useT } from '../ctx';
@@ -180,21 +180,15 @@ function PoolsSummary() {
 
 function AfterEnd() {
   const c = useT();
-  const sheet = (c.t.finalStandings ?? []).filter((s) => c.inDiv(s.division) && s.team);
-  const firstSection = sheet[0]?.section;
-  const engine = [...c.view.places.entries()].filter(([d]) => c.inDiv(d || undefined))[0];
-  const list: { place: number; team?: string; division?: string }[] = sheet.length
-    ? sheet.filter((s) => s.section === firstSection).map((s) => ({ place: s.place, team: s.team, division: s.division }))
-    : engine
-      ? engine[1].map((p) => ({ place: p.place, team: p.team, division: engine[0] || undefined }))
-      : [];
-  if (!list.length) return null;
+  const first = finalSections(c.view, c.inDiv)[0];
+  if (!first?.rows.length) return null;
+  const list = first.rows;
   const min = Math.min(...list.map((p) => p.place));
   const rel = list.map((p) => ({ ...p, rel: p.place - min + 1 }));
   const quals = c.view.format.divisions[rel[0].division ?? '']?.qualification;
   const podium = [rel.find((p) => p.rel === 2), rel.find((p) => p.rel === 1), rel.find((p) => p.rel === 3)];
   return (
-    <Section title="Final standings" sub={firstSection} right={<a className="link" href={tHref(c.id, 'standings')}>All</a>}>
+    <Section title="Final standings" sub={first.title || undefined} right={<a className="link" href={tHref(c.id, 'standings')}>All</a>}>
       <div className="podium" aria-label="Podium">
         {podium.map((p, i) =>
           p?.team ? (
