@@ -1,4 +1,10 @@
-import type { MappingBundle } from './types';
+import type { Mapping, MappingBundle } from './types';
+
+/** Whether a mapping holds anything Auto wouldn't work out by itself, so it's worth sending to others. */
+export function isCustomMapping(m: Mapping): boolean {
+  const corrected = Object.values(m.corrections).some((v) => (v && typeof v === 'object' ? Object.keys(v).length > 0 : Boolean(v)));
+  return m.mode !== 'auto' || corrected || Boolean(m.rules);
+}
 
 /** URL-safe base64. */
 function toB64url(bytes: Uint8Array): string {

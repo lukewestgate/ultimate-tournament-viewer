@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { encodeBundle, decodeBundle } from '../src/mapping/share';
+import { encodeBundle, decodeBundle, isCustomMapping } from '../src/mapping/share';
 import { detectMapping } from '../src/mapping/detect';
 import { launchTarget, tournamentStatus, isOnToday } from '../src/store/launch';
 import { applyHotTabs, backoffDelay, hotTabs, nextRefreshKind, FULL_EVERY } from '../src/store/refresh';
@@ -32,6 +32,33 @@ describe('share links', () => {
     expect(enc).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(await decodeBundle(enc)).toEqual({ mapping, format: { divisions: {} } });
     expect(await decodeBundle('zgarbage')).toBeUndefined();
+  });
+});
+
+describe('what a shared reading carries', () => {
+  const { mapping } = detectMapping(loadFixture('list-codes'));
+  const corrected = (c: Partial<typeof mapping.corrections>) => ({ ...mapping, corrections: { ...mapping.corrections, ...c } });
+  it('nothing for a plain automatic reading', () => {
+    expect(isCustomMapping(mapping)).toBe(false);
+    expect(isCustomMapping(corrected({ title: undefined, ignoreRows: [], aliases: {} }))).toBe(false);
+    expect(isCustomMapping(corrected({ title: null as unknown as string }))).toBe(false);
+  });
+  it('any correction, whether a list or a single value', () => {
+    expect(isCustomMapping(corrected({ title: 'Autumn Cup' }))).toBe(true);
+    expect(isCustomMapping(corrected({ timeZone: 'Europe/Dublin' }))).toBe(true);
+    expect(isCustomMapping(corrected({ aliases: { Leeds: 'Leeds 1' } }))).toBe(true);
+    expect(isCustomMapping(corrected({ ignoreRows: ['Gamelist!20'] }))).toBe(true);
+  });
+  it('a different mode or rules', () => {
+    expect(isCustomMapping({ ...mapping, mode: 'manual' })).toBe(true);
+    expect(isCustomMapping({ ...mapping, rules: {} as typeof mapping.rules })).toBe(true);
+  });
+  it('a title fix reaches the person who receives it', async () => {
+    const m = await encodeBundle({ mapping: corrected({ title: 'Autumn Cup', timeZone: 'Europe/Dublin' }) });
+    const b = await decodeBundle(m);
+    const t = processWorkbook('x', loadFixture('list-codes'), { mapping: b!.mapping }).tournament;
+    expect(t.title).toBe('Autumn Cup');
+    expect(t.timeZone).toBe('Europe/Dublin');
   });
 });
 

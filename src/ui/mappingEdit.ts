@@ -2,7 +2,7 @@ import type { TCtx } from './ctx';
 import type { Mapping } from '../mapping/types';
 import type { Format } from '../model/types';
 import { store } from '../store/app';
-import { encodeBundle } from '../mapping/share';
+import { encodeBundle, isCustomMapping } from '../mapping/share';
 import type { FeaturedEntry } from '../store/featured';
 
 /** Change the tournament's mapping (corrections, rules…) and re-read. Mode changes only when a reader changed it. */
@@ -23,7 +23,7 @@ export function editFormat(c: TCtx, fn: (f: Format) => Format | undefined) {
 /** The reading in shareable form, unless everything is automatic. */
 async function readingCode(c: TCtx): Promise<string | undefined> {
   const saved = store.get(c.id);
-  const custom = saved?.mapping && (saved.mapping.mode !== 'auto' || Object.values(saved.mapping.corrections).some((v) => v && typeof v === 'object' && Object.keys(v).length) || saved.mapping.rules);
+  const custom = saved?.mapping && isCustomMapping(saved.mapping);
   const userFormat = saved?.format && Object.values(saved.format.divisions).some((d) => Object.values(d.sources).some((e) => e.origin === 'user' || e.origin === 'ai'));
   if (!custom && !userFormat) return undefined;
   return encodeBundle({ mapping: c.p.mapping, format: userFormat ? saved!.format : undefined });
