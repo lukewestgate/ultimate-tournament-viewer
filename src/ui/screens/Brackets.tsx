@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { buildBoards, type Board } from '../../engine/bracket';
 import { finalSections, pathsAhead, relativePlace, type GameView, type PathNode } from '../../engine/view';
 import { divKey } from '../../model/types';
@@ -12,7 +12,7 @@ import { feedsOf } from '../outlook';
 import { IStar, IClose } from '../icons';
 import { setParams } from '../router';
 import { useOpenGame } from './GameDetail';
-import { boardSections, columnNames, elbow, gameTitle, layoutColumns, type BoardSections } from '../bracketLayout';
+import { boardSections, columnNames, elbow, gameTitle, layoutColumns, pageHeightAt, roundFrames, roundPositions, type BoardSections, type Placed } from '../bracketLayout';
 import type { ScreenProps } from './index';
 
 function useDesktop() {
@@ -223,11 +223,11 @@ function NodeRow({ v, i, sub }: { v: GameView; i: 0 | 1; sub?: boolean }) {
   );
 }
 
-function Node({ v, state, x, y, w, sub, onOpen, className }: { v: GameView; state: string; x: number; y: number; w: number; sub?: boolean; onOpen: () => void; className?: string }) {
+function Node({ v, state, x, y, w, sub, onOpen, className, game }: { v: GameView; state: string; x: number; y: number; w: number; sub?: boolean; onOpen: () => void; className?: string; game?: string }) {
   const c = useT();
   const cls = ['bnode', state, v.status === 'ifRequired' || v.g.conditional ? 'ifreq' : '', v.status === 'notPlayed' ? 'np' : '', v.result?.hypothetical ? 'hyp' : '', className ?? ''].filter(Boolean).join(' ');
   return (
-    <button className={cls} style={{ left: x, top: y, width: w }} onClick={onOpen}>
+    <button className={cls} style={{ left: x, top: y, width: w }} onClick={onOpen} data-game={game}>
       <span className="nh">
         <span className="nh-when">
           {v.g.day.slice(0, 3).toUpperCase()} {timeOf(v.g.start, c.t.timeZone)}
@@ -270,7 +270,7 @@ function Connectors({ m, pos, xOf, w, width, height, crossDotted }: { m: Model; 
         const st = m.state(src);
         const cls = target === '' ? '' : st === 'on' && target === 'on' ? 'on' : (st === 'on' || st === 'pos') && (target === 'pos' || target === 'on') ? 'pos' : 'dim';
         const dashed = v.status === 'ifRequired' || v.g.conditional;
-        paths.push(<path key={`${x.game}-${id}`} className={`cn ${cls}${dashed ? ' dashed' : ''}`} d={elbow(xOf(x.game) + w, q.y + q.h / 2, xOf(id), p.y + p.h / 2)} />);
+        paths.push(<path key={`${x.game}-${id}`} className={`cn ${cls}${dashed ? ' dashed' : ''}`} d={elbow(xOf(x.game) + w, q.y + q.h / 2, xOf(id), p.y + p.h / 2)} data-from={x.game} data-to={id} />);
       } else if (crossDotted && !sameSection && Math.abs(xOf(x.game) - xOf(id)) < 1 && q.y < p.y && ![...pos.entries()].some(([o, r]) => o !== id && o !== x.game && Math.abs(xOf(o) - xOf(id)) < 1 && r.y > q.y && r.y < p.y)) {
         const cx = xOf(id) + w / 2;
         paths.push(<path key={`${x.game}-${id}`} className="cn dotted" d={`M${cx},${q.y + q.h} V${p.y}`} />);
@@ -493,9 +493,12 @@ function TeamPaths({ team, division }: { team: string; division?: string }) {
 
 // ---------------------------------------------------------------- phone
 
-const P = { w: 236, x2: 292, row: 40, tall: 48, gap: 40 };
+const P = { w: 236, x: 16, stride: 276, row: 40, tall: 48, gap: 40 };
+const phoneX = (col: number) => P.x + col * P.stride;
+const connector = (from: Placed, to: Placed) => elbow(phoneX(from.col) + P.w, from.y + from.h / 2, phoneX(to.col), to.y + to.h / 2);
 
 function PhoneBoard({ board, hl, tools }: { board: Board; hl?: string; tools?: ReactNode }) {
+  const c = useT();
   const open = useOpenGame();
   const m = useModel(board, hl);
   const upperN = m.s.upper.length;
@@ -515,9 +518,73 @@ function PhoneBoard({ board, hl, tools }: { board: Board; hl?: string; tools?: R
     return m.s.lower.length && m.s.lower.some(unfinished) ? upperN : Math.max(0, upperN - 1);
   })();
   const [tab, setTab] = useState(initial);
-  const touch = useRef<number | undefined>(undefined);
-  const go = (i: number) => setTab(Math.max(0, Math.min(tabs.length - 1, i)));
+  const scroller = useRef<HTMLDivElement>(null);
+  const lower = useRef<HTMLDivElement>(null);
   const places = usePlaces(board, m);
+  const partial = c.view.levels[divKey(board.division)] === 'partial';
+  const frames = roundFrames(m.s.upper, m.s.inputs, (id) => nodeHeight(m.views.get(id), P.row, P.tall, partial), P.gap, P.gap + 20);
+  const lastRound = (upperN - 1) * P.stride;
+  const leftOf = (i: number) => (i < upperN ? i * P.stride : (lower.current?.offsetLeft ?? 0));
+
+  /** Position in rounds: the rounds overlap by a stride, then the placings slide in as a full page. */
+  const position = (el: HTMLElement) => {
+    const left = Math.max(0, el.scrollLeft);
+    if (left <= lastRound || !lower.current) return Math.min(left / P.stride, upperN - 1);
+    return upperN - 1 + Math.min(1, (left - lastRound) / (lower.current.offsetLeft - lastRound));
+  };
+
+  /** The browser scrolls sideways by itself; this keeps cards, connectors and height in step with it. */
+  const paint = () => {
+    const el = scroller.current;
+    if (!el) return 0;
+    const t = position(el);
+    const pos = roundPositions(frames, m.s.upper, t);
+    el.querySelectorAll<HTMLElement>('[data-game]').forEach((n) => {
+      const p = pos.get(n.dataset.game!);
+      if (p) n.style.transform = `translateY(${p.y}px)`;
+    });
+    el.querySelectorAll<SVGPathElement>('path[data-from]').forEach((n) => {
+      const from = pos.get(n.dataset.from!);
+      const to = pos.get(n.dataset.to!);
+      if (from && to) n.setAttribute('d', connector(from, to));
+    });
+    const top = el.querySelector<HTMLElement>('.ptree')?.offsetTop ?? 0;
+    const heights = frames.map((f) => top + f.height + 8);
+    el.style.height = `${pageHeightAt(lower.current ? [...heights, lower.current.offsetHeight] : heights, t)}px`;
+    return t;
+  };
+  useLayoutEffect(() => {
+    if (scroller.current) scroller.current.scrollLeft = leftOf(initial);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    paint();
+  });
+  useEffect(() => {
+    if (!lower.current) return;
+    const ro = new ResizeObserver(paint);
+    ro.observe(lower.current);
+    return () => ro.disconnect();
+  });
+  const go = (i: number) => {
+    const next = Math.max(0, Math.min(tabs.length - 1, i));
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    scroller.current?.scrollTo({ left: leftOf(next), behavior: still ? 'auto' : 'smooth' });
+  };
+  const lowerList = (
+    <div className="lower-list" ref={lower}>
+      <p className="context">
+        {m.lowerFrom ? `${m.lowerFrom[0].toUpperCase()}${m.lowerFrom.slice(1)} play for ${m.lowerLabel}. ` : ''}Each game says where its teams come from and where they go.
+      </p>
+      {m.s.lower.flat().map((id) => {
+        const v = m.views.get(id);
+        return v ? <LowerGame key={id} v={v} m={m} onOpen={() => open(id)} /> : null;
+      })}
+      <span className="lbl">Places</span>
+      <PlacesList rows={places} division={board.division} />
+      <QualLegend board={board} rows={places} />
+    </div>
+  );
+  const placesHere = !m.s.lower.length && tab === upperN - 1;
   return (
     <div className="pboard">
       {tabs.length > 1 && (
@@ -530,20 +597,16 @@ function PhoneBoard({ board, hl, tools }: { board: Board; hl?: string; tools?: R
         </nav>
       )}
       {tools}
-      {tab < upperN ? (
+      {upperN > 0 ? (
+        <div className="swipe" ref={scroller} onScroll={() => setTab(Math.round(paint()))}>
+          <PhoneTree m={m} frames={frames} tab={tab} onOpen={open} onGo={go} />
+          {m.s.lower.length > 0 && lowerList}
+        </div>
+      ) : (
+        lowerList
+      )}
+      {tab < upperN && (
         <>
-          <div
-            className="swipe"
-            onTouchStart={(e) => (touch.current = e.touches[0].clientX)}
-            onTouchEnd={(e) => {
-              if (touch.current === undefined) return;
-              const dx = e.changedTouches[0].clientX - touch.current;
-              touch.current = undefined;
-              if (Math.abs(dx) > 50) go(tab + (dx < 0 ? 1 : -1));
-            }}
-          >
-            <PhoneTree m={m} col={tab} onOpen={open} onNext={() => go(tab + 1)} />
-          </div>
           {tabs.length > 1 && (
             <div className="pager" aria-hidden="true">
               {tabs.map((t, i) => (
@@ -551,60 +614,62 @@ function PhoneBoard({ board, hl, tools }: { board: Board; hl?: string; tools?: R
               ))}
             </div>
           )}
-          {tab > 0 && <PrevResults m={m} col={tab - 1} />}
-          {!m.s.lower.length && tab === upperN - 1 && (
-            <section className="pb-sect">
-              <span className="lbl">Places</span>
-              <PlacesList rows={places} division={board.division} />
-              <QualLegend board={board} rows={places} />
-            </section>
+          {(tab > 0 || placesHere) && (
+            <div className="pb-after" key={tab}>
+              {tab > 0 && <PrevResults m={m} col={tab - 1} />}
+              {placesHere && (
+                <section className="pb-sect">
+                  <span className="lbl">Places</span>
+                  <PlacesList rows={places} division={board.division} />
+                  <QualLegend board={board} rows={places} />
+                </section>
+              )}
+            </div>
           )}
         </>
-      ) : (
-        <div className="lower-list">
-          <p className="context">
-            {m.lowerFrom ? `${m.lowerFrom[0].toUpperCase()}${m.lowerFrom.slice(1)} play for ${m.lowerLabel}. ` : ''}Each game says where its teams come from and where they go.
-          </p>
-          {m.s.lower.flat().map((id) => {
-            const v = m.views.get(id);
-            return v ? <LowerGame key={id} v={v} m={m} onOpen={() => open(id)} /> : null;
-          })}
-          <span className="lbl">Places</span>
-          <PlacesList rows={places} division={board.division} />
-          <QualLegend board={board} rows={places} />
-        </div>
       )}
     </div>
   );
 }
 
-function PhoneTree({ m, col, onOpen, onNext }: { m: Model; col: number; onOpen: (id: string) => void; onNext: () => void }) {
+/** Every round side by side, one stride apart, so the next round peeks in and a swipe slides to it. */
+function PhoneTree({ m, frames, tab, onOpen, onGo }: { m: Model; frames: ReturnType<typeof roundFrames>; tab: number; onOpen: (id: string) => void; onGo: (col: number) => void }) {
   const c = useT();
-  const cols = [m.s.upper[col], ...(m.s.upper[col + 1] ? [m.s.upper[col + 1]] : [])];
-  const partial = useT().view.levels[divKey(m.views.get(cols[0][0])?.g.division)] === 'partial';
-  const h = (id: string) => nodeHeight(m.views.get(id), P.row, P.tall, partial);
-  const { pos, height } = layoutColumns(cols, m.s.inputs, h, P.gap, P.gap + 20);
-  const xOf = (id: string) => (pos.get(id)!.col === 0 ? 16 : P.x2);
-  const t0 = m.views.get(cols[0][0]);
-  const nextName = cols[1] ? m.names[col + 1].long : '';
+  const cols = m.s.upper;
+  const pos = roundPositions(frames, cols, tab);
+  const height = Math.max(...frames.map((f) => f.height)) + 8;
   return (
-    <>
+    <div className="ptree-world" style={{ width: `calc(${(cols.length - 1) * P.stride}px + 100%)` }}>
       <div className="ptree-heads">
-        <span className="lbl" style={{ width: P.w }}>
-          {m.names[col].long} · <span className="d">{t0 ? timeOf(t0.g.start, c.t.timeZone) : ''}</span>
-        </span>
-        {nextName && <span className="lbl">{nextName === 'Medal games' ? 'Medals' : nextName}</span>}
+        {cols.map((col, i) => {
+          const t0 = m.views.get(col[0]);
+          const long = m.names[i].long;
+          return (
+            <span key={i}>
+              <span className="swipe-snap" style={{ left: i * P.stride }} />
+              <span className="lbl" style={{ left: phoneX(i) }}>
+                {i > tab && long === 'Medal games' ? 'Medals' : long}
+                {i <= tab && t0 && (
+                  <>
+                    {' '}
+                    · <span className="d">{timeOf(t0.g.start, c.t.timeZone)}</span>
+                  </>
+                )}
+              </span>
+            </span>
+          );
+        })}
       </div>
-      <div className="ptree" style={{ height: height + 8 }}>
-        <Connectors m={m} pos={pos} xOf={xOf} w={P.w} width={P.x2 + P.w} height={height + 8} />
+      <div className="ptree" style={{ height }}>
+        <Connectors m={m} pos={pos} xOf={(id) => phoneX(pos.get(id)!.col)} w={P.w} width={phoneX(cols.length - 1) + P.w} height={height} />
         {[...pos.entries()].map(([id, p]) => {
           const v = m.views.get(id);
           if (!v) return null;
-          const next = p.col === 1;
-          return <Node key={id} v={v} state={m.state(v)} x={xOf(id)} y={p.y} w={P.w} sub onOpen={() => (next ? onNext() : onOpen(id))} className={next ? 'peek' : ''} />;
+          const ahead = p.col > tab;
+          return <Node key={id} v={v} game={id} state={m.state(v)} x={phoneX(p.col)} y={0} w={P.w} sub onOpen={() => (ahead ? onGo(p.col) : onOpen(id))} className={ahead ? 'peek' : ''} />;
         })}
       </div>
-    </>
+    </div>
   );
 }
 

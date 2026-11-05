@@ -125,6 +125,37 @@ export function layoutColumns(cols: string[][], inputs: Map<string, Input[]>, he
   return { pos, height };
 }
 
+/** One layout per round on a phone: that round stacked, with the next round beside it. */
+export function roundFrames(cols: string[][], inputs: Map<string, Input[]>, heightOf: (id: string) => number, gap: number, below = gap): { pos: Map<string, Placed>; height: number }[] {
+  return cols.map((_, i) => layoutColumns(cols.slice(i, i + 2), inputs, heightOf, gap, below));
+}
+
+const lerp = (a: number, b: number, f: number) => a + (b - a) * f;
+
+/**
+ * Where every game sits part-way through a swipe, `t` being the position in rounds (1.5 is halfway
+ * from the second round to the third). A game moves from its place beside the round before to its
+ * own stacked place while that round slides out.
+ */
+export function roundPositions(frames: { pos: Map<string, Placed> }[], cols: string[][], t: number): Map<string, Placed> {
+  const pos = new Map<string, Placed>();
+  cols.forEach((col, k) => {
+    const f = Math.min(1, Math.max(0, t - k + 1));
+    for (const id of col) {
+      const home = frames[k].pos.get(id);
+      if (!home) continue;
+      pos.set(id, { col: k, y: lerp(frames[k - 1]?.pos.get(id)?.y ?? home.y, home.y, f), h: home.h });
+    }
+  });
+  return pos;
+}
+
+/** A height for each page, blended at position `t` as with roundPositions. */
+export function pageHeightAt(heights: number[], t: number): number {
+  const i = Math.min(heights.length - 1, Math.max(0, Math.floor(t)));
+  return lerp(heights[i], heights[Math.min(heights.length - 1, i + 1)], Math.min(1, Math.max(0, t - i)));
+}
+
 /** Elbow connector from the right middle of one node to the left middle of another. */
 export function elbow(x1: number, y1: number, x2: number, y2: number, r = 10): string {
   if (Math.abs(y2 - y1) < 1) return `M${x1},${y1} H${x2}`;

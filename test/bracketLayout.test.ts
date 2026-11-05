@@ -3,7 +3,7 @@ import { detectMapping } from '../src/mapping/detect';
 import { extract } from '../src/extract/extract';
 import { inferFormat } from '../src/format/infer';
 import { buildBoards } from '../src/engine/bracket';
-import { boardSections, columnNames, elbow, layoutColumns } from '../src/ui/bracketLayout';
+import { boardSections, columnNames, elbow, layoutColumns, pageHeightAt, roundFrames, roundPositions } from '../src/ui/bracketLayout';
 import type { Tournament } from '../src/model/types';
 import { loadFixture, type FixtureName } from './helpers/fixtures';
 
@@ -34,6 +34,41 @@ describe('bracket board sections', () => {
     const final = s.upper[2].find((id) => (s.inputs.get(id) ?? []).every((x) => x.take === 'winner'))!;
     const [a, b] = s.inputs.get(final)!.map((x) => pos.get(x.game)!);
     expect(pos.get(final)!.y).toBeCloseTo((a.y + b.y) / 2);
+  });
+});
+
+describe('swiping between rounds on a phone', () => {
+  const { t, format } = load('outdoor-1');
+  const board = buildBoards(t, format).find((b) => b.division === 'Women' && b.title === '1st–8th')!;
+  const s = boardSections(board, format.divisions['Women']);
+  const frames = roundFrames(s.upper, s.inputs, () => 100, 40, 60);
+  const semi = s.upper[1][0];
+  const beside = frames[0].pos.get(semi)!.y;
+  const stacked = frames[1].pos.get(semi)!.y;
+  it('matches each round’s own layout when settled on it', () => {
+    s.upper.forEach((col, i) => {
+      const at = roundPositions(frames, s.upper, i);
+      for (const id of [...col, ...(s.upper[i + 1] ?? [])]) expect(at.get(id)!.y).toBeCloseTo(frames[i].pos.get(id)!.y);
+    });
+  });
+  it('moves a game smoothly from beside the last round to its own stacked place', () => {
+    expect(beside).not.toBeCloseTo(stacked);
+    expect(roundPositions(frames, s.upper, 0.5).get(semi)!.y).toBeCloseTo((beside + stacked) / 2);
+  });
+  it('keeps games where they are outside their own step, including past the ends', () => {
+    expect(roundPositions(frames, s.upper, -0.4).get(semi)!.y).toBeCloseTo(beside);
+    expect(roundPositions(frames, s.upper, 2).get(semi)!.y).toBeCloseTo(stacked);
+    expect(roundPositions(frames, s.upper, 9).get(semi)!.y).toBeCloseTo(stacked);
+  });
+  it('numbers columns across the whole board', () => {
+    expect(roundPositions(frames, s.upper, 1).get(s.upper[2][0])!.col).toBe(2);
+  });
+  it('blends page heights and stops at the ends', () => {
+    expect(pageHeightAt([100, 300, 200], 0.5)).toBe(200);
+    expect(pageHeightAt([100, 300, 200], 1.5)).toBe(250);
+    expect(pageHeightAt([100, 300, 200], 2)).toBe(200);
+    expect(pageHeightAt([100, 300, 200], -1)).toBe(100);
+    expect(pageHeightAt([100, 300, 200], 7)).toBe(200);
   });
 });
 
