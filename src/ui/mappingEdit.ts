@@ -3,6 +3,7 @@ import type { Mapping } from '../mapping/types';
 import type { Format } from '../model/types';
 import { store } from '../store/app';
 import { encodeBundle } from '../mapping/share';
+import type { FeaturedEntry } from '../store/featured';
 
 /** Change the tournament's mapping (corrections, rules…) and re-read. Mode changes only when a reader changed it. */
 export function editMapping(c: TCtx, fn: (m: Mapping) => Mapping, mode?: Mapping['mode']) {
@@ -19,14 +20,26 @@ export function editFormat(c: TCtx, fn: (f: Format) => Format | undefined) {
   store.emit();
 }
 
-/** A share link: carries the mapping (and format) unless everything is automatic. */
-export async function shareLink(c: TCtx): Promise<string> {
-  const base = `${location.origin}${location.pathname}?sheet=${encodeURIComponent(c.id)}`;
+/** The reading in shareable form, unless everything is automatic. */
+async function readingCode(c: TCtx): Promise<string | undefined> {
   const saved = store.get(c.id);
   const custom = saved?.mapping && (saved.mapping.mode !== 'auto' || Object.values(saved.mapping.corrections).some((v) => v && typeof v === 'object' && Object.keys(v).length) || saved.mapping.rules);
   const userFormat = saved?.format && Object.values(saved.format.divisions).some((d) => Object.values(d.sources).some((e) => e.origin === 'user' || e.origin === 'ai'));
-  if (!custom && !userFormat) return base;
-  return `${base}&m=${await encodeBundle({ mapping: c.p.mapping, format: userFormat ? saved!.format : undefined })}`;
+  if (!custom && !userFormat) return undefined;
+  return encodeBundle({ mapping: c.p.mapping, format: userFormat ? saved!.format : undefined });
+}
+
+/** A share link: carries the mapping (and format) unless everything is automatic. */
+export async function shareLink(c: TCtx): Promise<string> {
+  const base = `${location.origin}${location.pathname}?sheet=${encodeURIComponent(c.id)}`;
+  const m = await readingCode(c);
+  return m ? `${base}&m=${m}` : base;
+}
+
+/** This tournament as a row of the featured sheet. */
+export async function featuredEntry(c: TCtx): Promise<FeaturedEntry> {
+  const days = c.t.days.map((d) => d.date).sort();
+  return { id: c.id, title: c.t.title, first: days[0], last: days.at(-1), divisions: c.t.divisions.map((d) => d.name), teams: c.t.teams.map((t) => t.name), m: await readingCode(c) };
 }
 
 export async function copyOrShare(url: string, title: string, toast: (t: string) => void) {

@@ -7,6 +7,7 @@ import { validateMapping } from '../mapping/validate';
 import { extract } from '../extract/extract';
 import { qualityCheck, type Problem } from '../extract/quality';
 import { inferFormat } from '../format/infer';
+import { endOfDay } from '../engine/time';
 import type { TournamentSummary } from './settings';
 
 export interface Processed {
@@ -41,13 +42,25 @@ export function processWorkbook(id: string, wb: Workbook, saved?: { mapping?: Ma
 export function summarize(p: Processed, lastFetched?: number, error?: string, primary?: string): TournamentSummary {
   const t = p.tournament;
   const sched = t.games.filter((g) => !g.unscheduled);
+  const open = sched.filter((g) => !g.isBye && !hasResult(g));
+  const ifRequired = open.filter((g) => g.conditional);
+  const lastEnd = sched.length ? Math.max(...sched.map((g) => g.end)) : undefined;
+  const standings = t.finalStandings ?? [];
   return {
+    counted: sched.filter((g) => !g.isBye).length,
+    unresolved: open.length - ifRequired.length,
+    ifRequiredUntil: ifRequired.length ? Math.max(...ifRequired.map((g) => g.end)) : undefined,
+    standingsDone: standings.length > 0 && standings.every((s) => s.team) && t.divisions.every((d) => standings.some((s) => s.division === d.name)),
+    sessions: sessionsOf(sched),
+    finishBy: lastEnd === undefined ? undefined : endOfDay(lastEnd, t.timeZone),
+    teamNames: t.teams.map((x) => x.name),
+    divisionNames: t.divisions.map((d) => d.name),
     primary: primary ? primaryInfo(t, primary) : undefined,
     pools: t.pools.length,
     games: sched.length,
     title: t.title,
     firstStart: sched.length ? Math.min(...sched.map((g) => g.start)) : undefined,
-    lastEnd: sched.length ? Math.max(...sched.map((g) => g.end)) : undefined,
+    lastEnd,
     days: t.days,
     divisions: t.divisions.length,
     teams: t.teams.length,
@@ -56,6 +69,20 @@ export function summarize(p: Processed, lastFetched?: number, error?: string, pr
     lastFetched,
     error,
   };
+}
+
+/** A score, a result mark or a forfeit, whether or not the teams have been worked out yet. */
+function hasResult(g: Tournament['games'][number]): boolean {
+  return (g.scores[0] !== undefined && g.scores[1] !== undefined) || Boolean(g.marks?.some(Boolean)) || Boolean(g.forfeit?.some(Boolean));
+}
+
+function sessionsOf(games: Tournament['games']): { start: number; end: number }[] {
+  const by = new Map<string, { start: number; end: number }>();
+  for (const g of games) {
+    const s = by.get(g.day);
+    by.set(g.day, { start: Math.min(g.start, s?.start ?? g.start), end: Math.max(g.end, s?.end ?? g.end) });
+  }
+  return [...by.values()].sort((a, b) => a.start - b.start);
 }
 
 /** The primary team's next game, or its final place, for the home card. */

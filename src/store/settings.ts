@@ -11,6 +11,9 @@ export interface AppSettings {
   aiModel?: string;
   iosHintShown?: boolean;
   recentSearches?: string[];
+  /** Featured admin: the sheet's Apps Script web app and its key. Stay on this device. */
+  adminUrl?: string;
+  adminKey?: string;
 }
 
 export interface FollowedTeam {
@@ -35,6 +38,10 @@ export interface TournamentSettings {
   history?: SavedReading[];
   /** An AI suggestion not used yet, kept so it can be compared in detail before deciding. */
   proposal?: SavedReading;
+  /** This device changed the reading itself, so featured updates leave it alone. */
+  ownReading?: boolean;
+  /** The featured reading last taken ("" = the featured entry had none). */
+  featuredM?: string;
 }
 
 /** A mapping (undefined = read automatically) and its format, as they were at some point. */
@@ -60,6 +67,19 @@ export interface TournamentSummary {
   datesGuessed: boolean;
   error?: string;
   lastFetched?: number;
+  /** Scheduled games that aren't byes, and how many of those (leaving out if-required games) have no result. */
+  counted?: number;
+  unresolved?: number;
+  /** When the last if-required game with no result ends. */
+  ifRequiredUntil?: number;
+  /** Final standings have a team in every place, for every division. */
+  standingsDone?: boolean;
+  /** First start and last end of each day's games. */
+  sessions?: { start: number; end: number }[];
+  /** The end of the last game's day, in the tournament's time zone. */
+  finishBy?: number;
+  teamNames?: string[];
+  divisionNames?: string[];
 }
 
 const APP_KEY = 'tv:app';

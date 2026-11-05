@@ -1,5 +1,5 @@
 import { store, useStore } from '../store/app';
-import { homeGroup, isOnToday } from '../store/launch';
+import { isOnToday, tournamentStatus } from '../store/launch';
 import { dateRange, fallbackTitle } from './fmt';
 import { useOverlay } from './overlay';
 import { href, navigate, tHref } from './router';
@@ -19,13 +19,12 @@ export function Switcher() {
     navigate(to);
   };
   const statusOf = (s: (typeof saved)[number]) => {
-    const g = homeGroup({ id: s.id, summary: s.summary, lastOpened: s.lastOpened }, now);
+    const status = tournamentStatus(s.summary, now);
     if (!s.summary) return 'Not opened yet';
     if (s.summary?.error) return "Can't load";
-    if (g === 'onToday') return 'On today';
-    if (g === 'datesUnconfirmed') return 'Dates not confirmed';
-    if (g === 'comingUp') return dateRange(s.summary?.days.map((d) => d.date) ?? []);
-    return s.summary?.lastEnd && s.summary.lastEnd < now ? 'Finished' : dateRange(s.summary?.days.map((d) => d.date) ?? []);
+    if (isOnToday(s.summary, now) && status !== 'completed') return 'On today';
+    if (status === 'guessed') return 'Dates not confirmed';
+    return status === 'completed' ? 'Completed' : dateRange(s.summary?.days.map((d) => d.date) ?? []);
   };
   return (
     <div className="switcher">

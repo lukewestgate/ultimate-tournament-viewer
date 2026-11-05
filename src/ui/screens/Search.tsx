@@ -59,7 +59,7 @@ export function searchAll(c: TCtx, query: string): { teams: Team[]; games: GameV
 }
 
 /** Highlight the first case-insensitive match of the query in a label. */
-function Hl({ text, q }: { text: string; q: string }) {
+export function Hl({ text, q }: { text: string; q: string }) {
   const i = q.trim() ? text.toLowerCase().indexOf(q.trim().toLowerCase()) : -1;
   if (i < 0) return <>{text}</>;
   const n = q.trim().length;

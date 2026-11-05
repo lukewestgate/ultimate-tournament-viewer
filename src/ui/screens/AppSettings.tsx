@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../../store/app';
 import { idbDel, idbUsage } from '../../store/db';
 import { DEFAULT_MODEL, testKey, type KeyCheck } from '../../mapping/ai';
+import { adminCall } from '../../store/featured';
 import { ICheck } from '../icons';
 import { Seg } from '../parts';
 import { SubPage } from '../Shell';
@@ -149,6 +150,8 @@ export function AppSettings() {
       </section>
       <span className="small muted">Clearing a copy keeps your fixes and followed teams; the sheet is downloaded again next time.</span>
 
+      <AdminAccess />
+
       <span className="lbl-head">About</span>
       <section className="card set-pad">
         <span className="small">
@@ -156,5 +159,44 @@ export function AppSettings() {
         </span>
       </section>
     </SubPage>
+  );
+}
+
+/** Where the featured sheet's script is. With both filled in, tournaments can be published from How this sheet is read. */
+function AdminAccess() {
+  const s = useStore();
+  const [url, setUrl] = useState(s.app.adminUrl ?? '');
+  const [key, setKey] = useState(s.app.adminKey ?? '');
+  const [test, setTest] = useState<string | undefined>();
+  const save = () => s.setApp({ adminUrl: url.trim() || undefined, adminKey: key.trim() || undefined });
+  return (
+    <details className="card pad dev">
+      <summary>Admin</summary>
+      <div className="stack" style={{ marginTop: 10 }}>
+        <label className="fieldset">
+          Script URL
+          <input className="field" inputMode="url" autoComplete="off" value={url} onChange={(e) => setUrl(e.target.value)} onBlur={save} placeholder="https://script.google.com/macros/s/…/exec" />
+        </label>
+        <label className="fieldset">
+          Admin key
+          <input className="field" type="password" autoComplete="off" value={key} onChange={(e) => setKey(e.target.value)} onBlur={save} />
+        </label>
+        <div className="key-test">
+          <button
+            className="btn"
+            disabled={!url.trim() || !key.trim() || test === 'Testing…'}
+            onClick={async () => {
+              save();
+              setTest('Testing…');
+              setTest(await adminCall({ url: url.trim(), key: key.trim() }, { action: 'ping' }).then(() => 'Everything works', (e: Error) => e.message));
+            }}
+          >
+            Test
+          </button>
+          {test && <span className="small">{test}</span>}
+        </div>
+        <span className="small muted">Stays on this device. Only needed to publish featured tournaments.</span>
+      </div>
+    </details>
   );
 }

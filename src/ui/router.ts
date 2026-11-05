@@ -67,6 +67,8 @@ export function useRoute(): Route {
       setRoute(parseHash(location.hash));
     };
     window.addEventListener('hashchange', on);
+    // A shared link navigates as the app starts, which can be before this listener exists.
+    on();
     return () => window.removeEventListener('hashchange', on);
   }, []);
   return route;

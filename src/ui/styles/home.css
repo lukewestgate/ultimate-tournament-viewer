@@ -3,6 +3,28 @@
 .home-head h1 { font-size: 28px; letter-spacing: -.01em; }
 .add-btn { align-items: center; justify-content: center; align-self: flex-start; min-height: 46px; padding: 0 18px; font-weight: 700; }
 .home-head .add-btn { align-self: center; }
+.home-add { background: var(--accent); color: var(--accent-ink); }
+.home-add:hover { background: var(--accent); }
+.home-tools { display: flex; flex-direction: column; gap: 6px; }
+.home-tools .sr-field { flex: none; }
+.home-tools .sr-field .ib { min-width: 36px; height: 36px; margin-right: -8px; color: var(--ink3); }
+.home-chips { flex: none; align-items: center; padding: 4px var(--pad) 4px 0; margin-right: calc(var(--pad) * -1); }
+.home-chips .chip { font-size: 14px; }
+.home-chips .chip:disabled { opacity: .45; cursor: default; }
+.home-chips .chip .d { font-size: 15px; font-weight: 700; opacity: .75; }
+.home-chips .sep { flex: none; width: 1px; height: 22px; margin: 0 3px; background: var(--line); }
+@media (min-width: 900px) {
+  .page.home { max-width: 980px; }
+  .home-head .add-btn.desk-only { display: inline-flex !important; }
+  .home-tools { flex-direction: row; align-items: center; gap: 14px; }
+  .home-tools .sr-field { width: 340px; }
+  .home-chips { flex: 1; padding-right: 0; margin-right: 0; }
+}
+.home .section > .lbl { margin-top: 4px; }
+.home-more { align-self: center; min-height: 44px; font-size: 15px; font-weight: 600; }
+.tcard-hits { font-weight: 600; color: var(--ink2); }
+.tcard-hits mark { background: var(--accent-soft); color: inherit; border-radius: 3px; padding: 0 1px; }
+.tcard-title mark { background: var(--accent-soft); color: inherit; border-radius: 3px; padding: 0 1px; }
 .cards { display: grid; gap: 12px; }
 @media (min-width: 700px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .tcard { display: flex; align-items: flex-start; gap: 2px; padding: 4px; }

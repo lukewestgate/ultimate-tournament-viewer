@@ -5,7 +5,8 @@ import { SubPage } from '../Shell';
 import { navigate, href, tHref } from '../router';
 import { useOverlay } from '../overlay';
 import { store } from '../../store/app';
-import { editFormat, editMapping, shareLink, copyOrShare } from '../mappingEdit';
+import { adminCall, hasOwnReading } from '../../store/featured';
+import { editFormat, editMapping, featuredEntry, shareLink, copyOrShare } from '../mappingEdit';
 import { mergeSuggestions } from '../../extract/quality';
 import { pointsDiffPreset, ukuPreset, TIEBREAK_LABEL, ALL_TIEBREAKS, UNCOMPUTABLE } from '../../engine/rulesPresets';
 import { divKey, type EngineLevel, type Rules } from '../../model/types';
@@ -277,6 +278,9 @@ function SettingsPage() {
         ))}
       </section>
 
+      <FeaturedReading />
+      <FeaturedAdmin />
+
       <button className="btn primary block big" onClick={async () => copyOrShare(await shareLink(c), t.title, overlay.toast)}>
         Share link{m.mode !== 'auto' ? ' with these fixes' : ''}
       </button>
@@ -291,6 +295,83 @@ function SettingsPage() {
         Remove from my tournaments
       </button>
     </SubPage>
+  );
+}
+
+/** Going back to the featured reading after changing this sheet's reading here. */
+function FeaturedReading() {
+  const c = useT();
+  const overlay = useOverlay();
+  const entry = store.featuredFor(c.id);
+  const saved = store.get(c.id);
+  if (!entry || !saved || !hasOwnReading(saved)) return null;
+  return (
+    <section className="card set-pad">
+      <span className="small muted">This tournament is featured, with its own reading. You’ve changed yours here, so updates to the featured one don’t reach you.</span>
+      <button
+        className="btn"
+        onClick={async () => {
+          await store.takeFeatured(entry, true);
+          overlay.toast('Using the featured reading.');
+        }}
+      >
+        Use the featured reading
+      </button>
+    </section>
+  );
+}
+
+/** Publish this tournament to everyone. Only there once the admin details are in App settings. */
+function FeaturedAdmin() {
+  const c = useT();
+  const overlay = useOverlay();
+  const [busy, setBusy] = useState(false);
+  const { adminUrl: url, adminKey: key } = store.app;
+  if (!url || !key) return null;
+  const entry = store.featuredFor(c.id);
+  const saved = store.get(c.id);
+  const upToDate = entry && saved && !saved.ownReading && (saved.featuredM ?? '') === (entry.m ?? '');
+  const run = async (work: () => Promise<void>, done: string) => {
+    setBusy(true);
+    try {
+      await work();
+      overlay.toast(done);
+    } catch (e) {
+      overlay.toast(`Not saved. ${(e as Error).message}`);
+    }
+    setBusy(false);
+  };
+  const publish = () =>
+    run(async () => {
+      const next = await featuredEntry(c);
+      await adminCall({ url, key }, { action: 'publish', entry: next });
+      store.published(next);
+    }, entry ? 'Featured tournament updated.' : 'Published to everyone.');
+  const unpublish = () =>
+    run(async () => {
+      await adminCall({ url, key }, { action: 'remove', id: c.id });
+      store.unpublished(c.id);
+    }, 'Removed from featured.');
+  return (
+    <section className="card set-pad">
+      <div className="card-title">
+        <b>Featured</b>
+        <span className={`tag sm ${!entry ? 'quiet' : upToDate ? 'final' : 'warn'}`}>{!entry ? 'Not featured' : upToDate ? 'Up to date' : 'Changes not published'}</span>
+      </div>
+      <span className="small muted">
+        {entry ? 'Everyone sees this tournament on Home. Changes you make here stay private until you update it.' : 'Publish this tournament to show it on Home for everyone, with the reading you have here.'}
+      </span>
+      <div className="row-btns">
+        <button className="btn primary" disabled={busy} onClick={publish}>
+          {busy ? 'Saving…' : entry ? 'Update' : 'Publish'}
+        </button>
+        {entry && (
+          <button className="btn danger-text" disabled={busy} onClick={unpublish}>
+            Remove from featured
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 

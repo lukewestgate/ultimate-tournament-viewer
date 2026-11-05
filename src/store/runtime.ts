@@ -12,6 +12,10 @@ import { fixtureUrl } from './fixtures';
 /** Earlier readings kept per tournament. */
 const HISTORY = 5;
 
+function remembered(s: TournamentSettings, label?: string) {
+  return label ? [{ at: Date.now(), label, mapping: s.mapping, format: s.format }, ...(s.history ?? [])].slice(0, HISTORY) : s.history;
+}
+
 export interface RuntimeState {
   id: string;
   phase: 'idle' | 'loading' | 'ready' | 'error';
@@ -191,13 +195,19 @@ export class TournamentRuntime {
    */
   setMapping(mapping: Mapping | undefined, format?: Format, remember?: string) {
     const s = this.settings();
-    const history = remember ? [{ at: Date.now(), label: remember, mapping: s.mapping, format: s.format }, ...(s.history ?? [])].slice(0, HISTORY) : s.history;
-    saveTournament({ ...s, mapping, format: format ?? (mapping ? s.format : undefined), history });
+    saveTournament({ ...s, mapping, format: format ?? (mapping ? s.format : undefined), history: remembered(s, remember), ownReading: true });
+    this.reprocess();
+  }
+
+  /** Take the featured reading: exactly what was published, and later updates keep arriving. */
+  setFeatured(mapping: Mapping | undefined, format: Format | undefined, featuredM: string, remember?: string) {
+    const s = this.settings();
+    saveTournament({ ...s, mapping, format, history: remembered(s, remember), ownReading: false, featuredM });
     this.reprocess();
   }
 
   setFormat(format: Format | undefined) {
-    saveTournament({ ...this.settings(), format });
+    saveTournament({ ...this.settings(), format, ownReading: true });
     this.reprocess();
   }
 }

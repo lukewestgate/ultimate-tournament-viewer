@@ -3,10 +3,18 @@ import { listIds, loadApp, loadTournament, removeTournament, saveApp, saveTourna
 import { TournamentRuntime, type RuntimeState } from './runtime';
 import { idbDel } from './db';
 import { decodeBundle } from '../mapping/share';
+import { fetchFeatured, FEATURED_SHEET, loadFeatured, saveFeatured, takesFeatured, type FeaturedEntry } from './featured';
+
+/** How often the featured list is checked while the app is open. */
+const FEATURED_EVERY = 5 * 60000;
 
 /** App-wide store: settings, saved tournaments and the running tournament(s). */
 class AppStore {
   app: AppSettings = loadApp();
+  featured: FeaturedEntry[] = loadFeatured();
+  /** Told when a tournament in use takes a new featured reading. */
+  onReadingUpdated?: (title: string) => void;
+  private lastFeatured = 0;
   private version = 0;
   private listeners = new Set<() => void>();
   private runtimes = new Map<string, TournamentRuntime>();
@@ -49,6 +57,8 @@ class AppStore {
     const s: TournamentSettings = { id, followed: [], addedAt: Date.now(), lastOpened: Date.now() };
     saveTournament(s);
     this.emit();
+    const entry = this.featuredFor(id);
+    if (entry) void this.takeFeatured(entry);
     return s;
   }
 
@@ -82,9 +92,73 @@ class AppStore {
     const b = await decodeBundle(m);
     if (!b) return false;
     this.add(id);
-    this.update(id, { mapping: b.mapping, format: b.format });
+    this.update(id, { mapping: b.mapping, format: b.format, ownReading: true });
     this.runtimes.get(id)?.reprocess();
     return true;
+  }
+
+  featuredFor(id: string): FeaturedEntry | undefined {
+    return this.featured.find((e) => e.id === id);
+  }
+
+  /** Keep the featured list fresh while the app is open. Returns how to stop. */
+  watchFeatured(): () => void {
+    if (!FEATURED_SHEET) return () => undefined;
+    const check = () => {
+      if (document.visibilityState === 'visible') void this.syncFeatured();
+    };
+    check();
+    const timer = setInterval(check, 60000);
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('online', check);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', check);
+      window.removeEventListener('online', check);
+    };
+  }
+
+  /** Fetch the list and pass on any new readings. A failed fetch just keeps the last list. */
+  async syncFeatured(): Promise<void> {
+    if (Date.now() - this.lastFeatured < FEATURED_EVERY) return;
+    this.lastFeatured = Date.now();
+    const list = await fetchFeatured().catch(() => undefined);
+    if (!list) return;
+    this.setFeatured(list);
+    await Promise.all(list.map((e) => this.takeFeatured(e)));
+  }
+
+  setFeatured(list: FeaturedEntry[]) {
+    if (JSON.stringify(list) === JSON.stringify(this.featured)) return;
+    this.featured = list;
+    saveFeatured(list);
+    this.emit();
+  }
+
+  /** Move a saved tournament to an entry's reading if it takes updates, or anyway with `force`. */
+  async takeFeatured(e: FeaturedEntry, force = false): Promise<void> {
+    const b = e.m ? await decodeBundle(e.m) : undefined;
+    if (e.m && !b) return;
+    // Checked after the await: a shared link may have just saved its own reading.
+    const s = loadTournament(e.id);
+    if (!s || (!force && !takesFeatured(s, e))) return;
+    const r = this.runtime(e.id);
+    const inUse = Boolean(r.state.processed);
+    r.setFeatured(b?.mapping, b?.format, e.m ?? '', s.mapping ? 'Before the featured reading' : undefined);
+    this.emit();
+    if (inUse && !force) this.onReadingUpdated?.(s.summary?.title ?? e.title);
+  }
+
+  /** This device just published: its reading is now the featured one. Holds off re-reading the sheet, which can lag. */
+  published(e: FeaturedEntry) {
+    this.lastFeatured = Date.now();
+    this.setFeatured([...this.featured.filter((x) => x.id !== e.id), e]);
+    this.update(e.id, { ownReading: false, featuredM: e.m ?? '' });
+  }
+
+  unpublished(id: string) {
+    this.lastFeatured = Date.now();
+    this.setFeatured(this.featured.filter((x) => x.id !== id));
   }
 }
 

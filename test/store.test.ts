@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { encodeBundle, decodeBundle } from '../src/mapping/share';
 import { detectMapping } from '../src/mapping/detect';
-import { launchTarget, homeGroup, isOnToday } from '../src/store/launch';
+import { launchTarget, tournamentStatus, isOnToday } from '../src/store/launch';
 import { applyHotTabs, backoffDelay, hotTabs, nextRefreshKind, FULL_EVERY } from '../src/store/refresh';
 import { changedGames, processWorkbook } from '../src/store/pipeline';
 import { idbGet, idbSet, idbDel } from '../src/store/db';
@@ -67,9 +67,9 @@ describe('launch routing', () => {
     expect(isOnToday(sum(now + 2 * H, now + 4 * H), now)).toBe(false);
   });
   it('home groups', () => {
-    expect(homeGroup({ id: 'a', summary: later }, now)).toBe('comingUp');
-    expect(homeGroup({ id: 'a', summary: sum(now - 100 * H, now - 90 * H) }, now)).toBe('recent');
-    expect(homeGroup({ id: 'a', summary: { ...later, datesGuessed: true } }, now)).toBe('datesUnconfirmed');
+    expect(tournamentStatus(later, now)).toBe('upcoming');
+    expect(tournamentStatus(sum(now - 100 * H, now - 90 * H), now)).toBe('completed');
+    expect(tournamentStatus({ ...later, datesGuessed: true }, now)).toBe('guessed');
   });
 });
 

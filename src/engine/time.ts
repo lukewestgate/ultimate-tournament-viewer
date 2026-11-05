@@ -42,6 +42,12 @@ export function zonedEpoch(date: string, mins: number, tz: string): number {
   return t;
 }
 
+/** The midnight that ends the day containing `epoch` in `tz`. */
+export function endOfDay(epoch: number, tz: string): number {
+  const [y, m, d] = wallClock(epoch, tz).date.split('-').map(Number);
+  return zonedEpoch(new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10), 0, tz);
+}
+
 /** Wall-clock date and minutes for an instant in `tz`. */
 export function wallClock(epoch: number, tz: string): { date: string; mins: number } {
   const parts: Record<string, string> = {};

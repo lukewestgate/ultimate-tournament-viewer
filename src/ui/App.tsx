@@ -52,6 +52,19 @@ function useSharedLink(): boolean {
   return done;
 }
 
+/** Keep the featured list fresh, and say when it changes the tournament someone is using. */
+function useFeatured() {
+  const { toast } = useOverlay();
+  useEffect(() => {
+    store.onReadingUpdated = (title) => toast(`Reading updated for ${title}.`);
+    const stop = store.watchFeatured();
+    return () => {
+      store.onReadingUpdated = undefined;
+      stop();
+    };
+  }, [toast]);
+}
+
 function Launch() {
   // Empty hash: pick the screen per spec §9.2.
   useEffect(() => {
@@ -73,6 +86,7 @@ export function App() {
 
 function Root() {
   useTheme();
+  useFeatured();
   const ready = useSharedLink();
   const route = useRoute();
   if (!ready) return <Loading text="Opening shared link…" />;
