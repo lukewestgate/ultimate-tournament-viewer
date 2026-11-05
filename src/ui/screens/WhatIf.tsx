@@ -84,7 +84,7 @@ export function WhatIf({ arg }: ScreenProps) {
                   <b className="d wi-rank">{r.rank}</b>
                   <span className={`delta${moved > 0 ? ' up' : moved < 0 ? ' down' : ''}`}>{moved > 0 ? `↑${moved}` : moved < 0 ? `↓${-moved}` : '='}</span>
                   <button className="wi-team" onClick={() => setTeam(r.team)} aria-pressed={r.team === team}>
-                    <TeamName name={r.team} division={pool.division} bold={r.team === team} />
+                    <TeamName name={r.team} division={pool.division} bold={r.team === team} plain />
                   </button>
                   <span className="d wi-diff">{signed(r.diff)}</span>
                   <b className="d wi-pts">{r.pts}</b>

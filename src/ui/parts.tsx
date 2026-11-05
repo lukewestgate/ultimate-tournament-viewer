@@ -5,6 +5,8 @@ import { STATUS_LABEL } from '../engine/status';
 import { regionTag, withoutTag } from '../extract/names';
 import { useT } from './ctx';
 import { timeOf, until } from './fmt';
+import { IChevronRight } from './icons';
+import { useOverlay } from './overlay';
 import { tHref } from './router';
 import { teamKey } from '../store/settings';
 
@@ -12,9 +14,14 @@ export function Dot({ color, size = 10 }: { color: string; size?: number }) {
   return <span className="dot" style={{ background: color, width: size, height: size }} aria-hidden="true" />;
 }
 
-/** Team name with club dot and a quiet region-tag chip. Links to the team page unless `plain`. */
-export function TeamName({ name, division, bold, plain, size, short }: { name: string; division?: string; bold?: boolean; plain?: boolean; size?: number; short?: boolean }) {
+/**
+ * Team name with club dot and a quiet region-tag chip. Links to the team page unless `plain`.
+ * Use `plain` anywhere the surrounding row or card is itself tappable, so a tap can't land on the wrong target.
+ * `chevron` marks the link visibly, for places where it's the main way through to the team page.
+ */
+export function TeamName({ name, division, bold, plain, size, short, chevron }: { name: string; division?: string; bold?: boolean; plain?: boolean; size?: number; short?: boolean; chevron?: boolean }) {
   const c = useT();
+  const overlay = useOverlay();
   const tag = regionTag(name);
   const followed = c.isFollowed(name, division);
   const shown = short ? shortName(tag ? withoutTag(name) : name) : tag ? withoutTag(name) : name;
@@ -30,8 +37,16 @@ export function TeamName({ name, division, bold, plain, size, short }: { name: s
   );
   if (plain) return <span className="tn">{inner}</span>;
   return (
-    <a className="tn" href={tHref(c.id, 'team', teamKey(name, division))} onClick={(e) => e.stopPropagation()}>
+    <a
+      className="tn"
+      href={tHref(c.id, 'team', teamKey(name, division))}
+      onClick={(e) => {
+        e.stopPropagation();
+        overlay.closeSheet();
+      }}
+    >
       {inner}
+      {chevron && <IChevronRight className="tn-go" size={18} />}
     </a>
   );
 }
@@ -64,8 +79,8 @@ export function possibleText(poss: string[]): string {
 }
 
 /** One side of a game: the team, or the slot label (italic) with the teams that could still be there. */
-export function Side({ side, division, bold, plain, inline, short, size }: { side: SideRes; division?: string; bold?: boolean; plain?: boolean; inline?: boolean; short?: boolean; size?: number }) {
-  if (side.team) return <TeamName name={side.team} division={division} bold={bold} plain={plain} short={short} size={size} />;
+export function Side({ side, division, bold, plain, inline, short, size, chevron }: { side: SideRes; division?: string; bold?: boolean; plain?: boolean; inline?: boolean; short?: boolean; size?: number; chevron?: boolean }) {
+  if (side.team) return <TeamName name={side.team} division={division} bold={bold} plain={plain} short={short} size={size} chevron={chevron} />;
   const poss = possibleText(side.possible);
   return (
     <span className={`slot${inline ? ' inline' : ''}`}>
@@ -219,7 +234,7 @@ export function GameRow({ v, showTime, showDay, onOpen, extra, noMine }: { v: Ga
       <div className="gteams">
         {([0, 1] as const).map((i) => (
           <div key={i} className={`gside${w === i ? ' won' : w !== undefined ? ' lost' : ''}`}>
-            <Side side={v.sides[i]} division={v.g.division} bold={w === i} inline />
+            <Side side={v.sides[i]} division={v.g.division} bold={w === i} inline plain />
             <b className="gscore d">{scoreText(v, i)}</b>
           </div>
         ))}

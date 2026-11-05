@@ -80,7 +80,7 @@ export function GameDetail({ id }: { id: string }) {
           <div className={`gd-teams${upcoming ? ' small' : ''}`}>
             {([0, 1] as const).map((i) => (
               <div key={i} className={`gd-side${w === i ? ' won' : ''}${w !== undefined && w !== i ? ' lost' : ''}`}>
-                <Side side={v.sides[i]} division={v.g.division} bold={w === i} />
+                <Side side={v.sides[i]} division={v.g.division} bold={w === i} chevron />
                 {v.result || live ? <b className="d gd-score">{scoreText(v, i) || '–'}</b> : standing(v.sides[i].team) && <span className="gd-standing">{standing(v.sides[i].team)}</span>}
               </div>
             ))}

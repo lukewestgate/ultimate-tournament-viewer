@@ -85,7 +85,7 @@ export function WhatIfControls({ id, sheet }: { id: string; sheet?: boolean }) {
       <div className={`wic-teams${isPool ? '' : ' bracket'}`}>
         {([0, 1] as const).map((i) => {
           const won = (i === 0 && outcome === 'A') || (i === 1 && outcome === 'B');
-          const name = <Side side={v.sides[i]} division={v.g.division} bold={won} />;
+          const name = <Side side={v.sides[i]} division={v.g.division} bold={won} plain />;
           return (
             <div key={i} className={`wic-team${won ? ' on' : ''}`}>
               {isPool ? (

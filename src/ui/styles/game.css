@@ -7,6 +7,7 @@
 .gd-teams { display: flex; flex-direction: column; gap: 4px; }
 .gd-side { display: flex; align-items: center; gap: 10px; min-height: 52px; font-size: 22px; }
 .gd-side > :first-child { flex: 1; min-width: 0; }
+.gd-side > a.tn { align-self: stretch; }
 .gd-side .tn-name { font-weight: 500; }
 .gd-side.won .tn-name { font-weight: 700; }
 .gd-side.lost { color: var(--ink2); }

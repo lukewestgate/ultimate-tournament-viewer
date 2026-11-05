@@ -204,7 +204,7 @@ function NodeRow({ v, i, sub }: { v: GameView; i: 0 | 1; sub?: boolean }) {
   if (side.team)
     return (
       <span className={cls}>
-        <TeamName name={side.team} division={v.g.division} bold={w === i} />
+        <TeamName name={side.team} division={v.g.division} bold={w === i} plain />
         {score}
       </span>
     );
@@ -837,7 +837,7 @@ function LowerGame({ v, m, onOpen }: { v: GameView; m: Model; onOpen: () => void
           return (
             <span key={i} className={`lg-row${w === i ? ' won' : ''}${w !== undefined && w !== i ? ' lost' : ''}`}>
               {s.team ? (
-                <TeamName name={s.team} division={v.g.division} bold={w === i} />
+                <TeamName name={s.team} division={v.g.division} bold={w === i} plain />
               ) : (
                 <span className="lg-open">
                   <span className="dot ring" />
