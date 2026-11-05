@@ -125,7 +125,7 @@ function withoutTagSafe(s: string) {
   return s.replace(/\s*\([A-Za-z]{1,4}\d{0,2}\)\s*$/, '');
 }
 
-/** Where a placement game's winner and loser go next, in short form: "SF1 11:00 P1" or "3rd". */
+/** Where a placement game's winner and loser go next, in short form: "SF1 11:00 P1", "Pool E" or "3rd". */
 export function feedsOf(view: View, gameId: string): { winner?: string; loser?: string } {
   const v = view.byId.get(gameId);
   const f = v && view.format.divisions[v.g.division ?? ''];
@@ -141,6 +141,7 @@ export function feedsOf(view: View, gameId: string): { winner?: string; loser?: 
       const [kind, id] = key.split(':');
       const t = kind === 'game' ? view.byId.get(id) : undefined;
       if (t) out[take] = [t.g.code?.replace(/[[\]]/g, ''), hhmm(t.g.start), t.g.pitch.label ? `P${t.g.pitch.label}` : ''].filter(Boolean).join(' ');
+      else if (kind === 'pool') out[take] = `Pool ${id}`;
     }
     if (!out[take]) {
       const place = Object.entries(f.places ?? {}).find(([, e]) => e.source.kind === 'gameResult' && e.source.game === gameId && e.source.take === take)?.[0];

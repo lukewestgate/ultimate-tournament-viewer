@@ -37,6 +37,33 @@ export function positionGames(t: Tournament, division: string | undefined): Game
   return t.games.filter((g) => g.division === division && g.stage === 'placement' && !g.isBye && positionOf(g, 0, t.pools) && positionOf(g, 1, t.pools));
 }
 
+/** The last game at position n that starts before `at`, and which of its results holds n afterwards (R4). */
+function lastAtPosition(posGames: Game[], pools: Pool[], n: number, at: number): { game: Game; take: 'winner' | 'loser' } | undefined {
+  for (const g of posGames.filter((x) => x.start < at).reverse()) {
+    const a = positionOf(g, 0, pools)!.n;
+    const b = positionOf(g, 1, pools)!.n;
+    if (a === n || b === n) return { game: g, take: n === Math.min(a, b) ? 'winner' : 'loser' };
+  }
+  return undefined;
+}
+
+/**
+ * [finish, place] pairs of a pool that decides a run of places: the Nth finisher takes the Nth seed (R2/R3).
+ * Seeds with a gap (9, 10, 17) mean a pool of teams from different groups, whose finishing order isn't the final order.
+ */
+function poolPlaces(p: Pool): [number, number][] {
+  const pairs: [number, number][] = p.finishToSeed
+    ? Object.entries(p.finishToSeed).map(([finish, seed]) => [Number(finish), seed])
+    : p.slots
+        .map((s) => s.seed)
+        .filter((s): s is number => s !== undefined)
+        .sort((a, b) => a - b)
+        .map((seed, i) => [i + 1, seed]);
+  if (pairs.length !== p.slots.length) return [];
+  const seeds = pairs.map(([, seed]) => seed);
+  return Math.max(...seeds) - Math.min(...seeds) === seeds.length - 1 ? pairs : [];
+}
+
 const entry = (source: Source, origin: SourceOrigin): SourceEntry => ({ source, origin, status: 'unverified' });
 
 /** Find a game a slot label refers to ("8v9", "QF1", game number "12"). */
@@ -92,9 +119,17 @@ export function inferFormat(t: Tournament, existing?: Format, opts: { template?:
     // User (and AI) edits first.
     if (prev) for (const [k, e] of Object.entries(prev.sources)) if (e.origin === 'user' || e.origin === 'ai') f.sources[k] = e;
 
-    // Power-pool slots: held by whoever holds the mapped seed after the earlier stage (R3).
-    for (const p of t.pools.filter((x) => x.division === d && x.stage === 'powerPool')) {
-      for (const s of p.slots) if (s.seed !== undefined) set(poolSlotKey(p.name, s.slot), entry({ kind: 'seed', seed: s.seed }, conventionOrigin));
+    // Power-pool slots: held by whoever holds the mapped seed after the earlier stage (R3), which is a crossover at that position if there was one.
+    const posGames = positionGames(t, d);
+    const powerPools = t.pools.filter((x) => x.division === d && x.stage === 'powerPool');
+    const poolStarts = (p: Pool) => t.games.filter((g) => g.pool === p.name).map((g) => g.start);
+    for (const p of powerPools) {
+      const start = Math.min(...poolStarts(p));
+      for (const s of p.slots) {
+        if (s.seed === undefined) continue;
+        const prior = lastAtPosition(posGames, t.pools, s.seed, start);
+        set(poolSlotKey(p.name, s.slot), entry(prior ? { kind: 'gameResult', game: prior.game.id, take: prior.take } : { kind: 'seed', seed: s.seed }, conventionOrigin));
+      }
       if (p.carried?.length) f.carried!.push({ pool: p.name, rule: 'earlierGameBetweenSameTeams' });
     }
 
@@ -107,7 +142,6 @@ export function inferFormat(t: Tournament, existing?: Format, opts: { template?:
       }
     }
     // Layer 4: code conventions (R4): in XvY the winner takes X, the loser Y.
-    const posGames = positionGames(t, d);
     const lastAt = new Map<string, { game: Game; take: 'winner' | 'loser' }>();
     for (const g of posGames) {
       const p0 = positionOf(g, 0, t.pools)!;
@@ -127,6 +161,16 @@ export function inferFormat(t: Tournament, existing?: Format, opts: { template?:
     for (const [k, v] of lastAt) {
       const n = Number(k.split('|')[2]);
       f.places![n] = entry({ kind: 'gameResult', game: v.game.id, take: v.take }, conventionOrigin);
+    }
+    // A power pool that ends a position's run decides that place, unless the finish feeds a later game.
+    const lastStart = (p: Pool) => Math.max(...poolStarts(p));
+    for (const p of [...powerPools].sort((a, b) => lastStart(a) - lastStart(b))) {
+      for (const [finish, place] of poolPlaces(p)) {
+        const feeds = Object.values(f.sources).some(({ source: s }) => s.kind === 'poolFinish' && s.pool === p.name && s.place === finish);
+        const after = lastAtPosition(posGames, t.pools, place, Infinity);
+        if (feeds || (after && after.game.start > lastStart(p))) continue;
+        f.places![place] = entry({ kind: 'poolFinish', pool: p.name, place: finish }, conventionOrigin);
+      }
     }
     out.divisions[dk] = f;
   }

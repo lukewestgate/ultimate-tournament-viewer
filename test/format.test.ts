@@ -5,6 +5,8 @@ import { engineLevel, gameKey, inferFormat, poolSlotKey } from '../src/format/in
 import { validateFormat } from '../src/format/validate';
 import { resolve, type EffResult } from '../src/engine/resolve';
 import { buildBoards } from '../src/engine/bracket';
+import { buildView } from '../src/engine/view';
+import { feedsOf } from '../src/ui/outlook';
 import { resultOf } from '../src/engine/standings';
 import type { Format, Game, Tournament } from '../src/model/types';
 import { loadFixture, type FixtureName } from './helpers/fixtures';
@@ -105,6 +107,30 @@ describe('format inference on the UKU template', () => {
     const boards = buildBoards(t, format);
     expect(boards.map((b) => b.title)).toEqual(['1st–8th', '9th–16th']);
     expect(boards[0].rounds[0].map((id) => t.games.find((g) => g.id === id)!.code)).toContain('8v9');
+  });
+});
+
+describe('format inference with power pools after crossovers', () => {
+  const { t, format } = load('outdoor-3');
+  const f = format.divisions['UXON'];
+
+  it('crossover winners and losers take their pool slots; a seed with no crossover stays on its seed', () => {
+    const j1 = f.sources[poolSlotKey('J', 'J1')].source;
+    expect(j1.kind).toBe('gameResult');
+    expect(f.sources[poolSlotKey('J', 'J4')].source).toEqual({ kind: 'seed', seed: 20 });
+    if (j1.kind === 'gameResult') expect(feedsOf(buildView(t, format, { now: Date.UTC(2026, 9, 20) }), j1.game).winner).toBe('Pool J');
+  });
+
+  it('the pool decides its run of places, including a seed that played no crossover', () => {
+    expect([17, 18, 19, 20].map((n) => f.places![n].source)).toEqual([1, 2, 3, 4].map((place) => ({ kind: 'poolFinish', pool: 'J', place })));
+    const places = resolve({ t, format, results: realResults(t), ended: true }).places.get('UXON')!;
+    expect(places.filter((p) => p.place >= 17 && p.place <= 20).map((p) => p.team)).toEqual(['Nottingham 1', 'Bristol 1', 'York 1', 'Imperial 1']);
+  });
+
+  it('a pool with a gap in its seeds does not decide places', () => {
+    const women = load('outdoor-1').format.divisions['Women'];
+    expect(women.sources[poolSlotKey('F', 'F1')].source.kind).toBe('gameResult');
+    expect(women.places![9].source.kind).toBe('gameResult');
   });
 });
 
