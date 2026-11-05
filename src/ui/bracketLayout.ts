@@ -156,6 +156,17 @@ export function pageHeightAt(heights: number[], t: number): number {
   return lerp(heights[i], heights[Math.min(heights.length - 1, i + 1)], Math.min(1, Math.max(0, t - i)));
 }
 
+/**
+ * Which page a swipe settles on: the page it began on, or the next one along if it went far enough
+ * or was flicked that way. `moved` is how far it went, `gap` the distance to that next page, and
+ * `speed` the finger's speed at release in px/ms, all positive going forward.
+ */
+export function swipeTarget(from: number, count: number, moved: number, gap: number, speed: number): number {
+  const flicked = Math.abs(speed) > 0.3;
+  const onward = flicked ? speed * moved > 0 : Math.abs(moved) > gap * 0.3;
+  return Math.max(0, Math.min(count - 1, from + (onward ? Math.sign(moved) : 0)));
+}
+
 /** Elbow connector from the right middle of one node to the left middle of another. */
 export function elbow(x1: number, y1: number, x2: number, y2: number, r = 10): string {
   if (Math.abs(y2 - y1) < 1) return `M${x1},${y1} H${x2}`;

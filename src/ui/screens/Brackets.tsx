@@ -12,7 +12,7 @@ import { feedsOf } from '../outlook';
 import { IStar, IClose } from '../icons';
 import { setParams } from '../router';
 import { useOpenGame } from './GameDetail';
-import { boardSections, columnNames, elbow, gameTitle, layoutColumns, pageHeightAt, roundFrames, roundPositions, type BoardSections, type Placed } from '../bracketLayout';
+import { boardSections, columnNames, elbow, gameTitle, layoutColumns, pageHeightAt, roundFrames, roundPositions, swipeTarget, type BoardSections, type Placed } from '../bracketLayout';
 import type { ScreenProps } from './index';
 
 function useDesktop() {
@@ -520,6 +520,9 @@ function PhoneBoard({ board, hl, tools }: { board: Board; hl?: string; tools?: R
   const [tab, setTab] = useState(initial);
   const scroller = useRef<HTMLDivElement>(null);
   const lower = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ x: number; y: number; left: number; from: number; lastX: number; at: number; speed: number; axis?: 'x' | 'y' } | undefined>(undefined);
+  const moving = useRef(false);
+  const frame = useRef(0);
   const places = usePlaces(board, m);
   const partial = c.view.levels[divKey(board.division)] === 'partial';
   const frames = roundFrames(m.s.upper, m.s.inputs, (id) => nodeHeight(m.views.get(id), P.row, P.tall, partial), P.gap, P.gap + 20);
@@ -533,7 +536,7 @@ function PhoneBoard({ board, hl, tools }: { board: Board; hl?: string; tools?: R
     return upperN - 1 + Math.min(1, (left - lastRound) / (lower.current.offsetLeft - lastRound));
   };
 
-  /** The browser scrolls sideways by itself; this keeps cards, connectors and height in step with it. */
+  /** Keeps cards, connectors and height in step with the sideways scroll position. */
   const paint = () => {
     const el = scroller.current;
     if (!el) return 0;
@@ -565,11 +568,96 @@ function PhoneBoard({ board, hl, tools }: { board: Board; hl?: string; tools?: R
     ro.observe(lower.current);
     return () => ro.disconnect();
   });
-  const go = (i: number) => {
-    const next = Math.max(0, Math.min(tabs.length - 1, i));
-    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    scroller.current?.scrollTo({ left: leftOf(next), behavior: still ? 'auto' : 'smooth' });
+  useEffect(() => {
+    // Turning the phone moves the placings page, which sits a screen's width along.
+    const realign = () => {
+      if (!moving.current && scroller.current) scroller.current.scrollLeft = leftOf(tab);
+    };
+    window.addEventListener('resize', realign);
+    return () => window.removeEventListener('resize', realign);
+  });
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+
+  const glide = (to: number) => {
+    const el = scroller.current;
+    if (!el) return;
+    cancelAnimationFrame(frame.current);
+    const from = el.scrollLeft;
+    moving.current = from !== to && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!moving.current) {
+      el.scrollLeft = to;
+      return;
+    }
+    const start = performance.now();
+    const step = (now: number) => {
+      const f = Math.min(1, Math.max(0, (now - start) / 280));
+      el.scrollLeft = from + (to - from) * (1 - (1 - f) ** 3);
+      if (f < 1) frame.current = requestAnimationFrame(step);
+      else moving.current = false;
+    };
+    frame.current = requestAnimationFrame(step);
   };
+  const go = (i: number) => glide(leftOf(Math.max(0, Math.min(tabs.length - 1, i))));
+
+  // The finger drives the scroll so one swipe can't pass the next round: rounds sit closer together
+  // than a thumb can travel, and scroll snapping would carry on to the round after.
+  const touchStart = (e: TouchEvent) => {
+    const el = scroller.current;
+    if (!el) return;
+    if (e.touches.length > 1) return touchEnd(e);
+    cancelAnimationFrame(frame.current);
+    moving.current = true;
+    const p = e.touches[0];
+    drag.current = { x: p.clientX, y: p.clientY, left: el.scrollLeft, from: Math.round(position(el)), lastX: p.clientX, at: e.timeStamp, speed: 0 };
+  };
+  const touchMove = (e: TouchEvent) => {
+    const d = drag.current;
+    const el = scroller.current;
+    if (!d || !el || d.axis === 'y') return;
+    if (e.touches.length > 1) return touchEnd(e);
+    const p = e.touches[0];
+    if (!d.axis) {
+      const across = Math.abs(p.clientX - d.x);
+      const down = Math.abs(p.clientY - d.y);
+      if (Math.max(across, down) < 8) return;
+      d.axis = across > down ? 'x' : 'y';
+      d.x = d.lastX = p.clientX;
+      d.at = e.timeStamp;
+    }
+    if (d.axis === 'y') return;
+    // Claimed, or the browser starts a fling of its own and swallows the next tap to stop it.
+    if (e.cancelable) e.preventDefault();
+    const dt = e.timeStamp - d.at;
+    if (dt > 0) d.speed = 0.6 * ((d.lastX - p.clientX) / dt) + 0.4 * d.speed;
+    d.lastX = p.clientX;
+    d.at = e.timeStamp;
+    el.scrollLeft = Math.max(leftOf(Math.max(0, d.from - 1)), Math.min(leftOf(Math.min(tabs.length - 1, d.from + 1)), d.left + d.x - p.clientX));
+  };
+  const touchEnd = (e: TouchEvent) => {
+    const d = drag.current;
+    const el = scroller.current;
+    if (!d || !el) return;
+    drag.current = undefined;
+    const home = leftOf(d.from);
+    const moved = el.scrollLeft - home;
+    const next = leftOf(Math.max(0, Math.min(tabs.length - 1, d.from + Math.sign(moved))));
+    const speed = e.type === 'touchend' && e.timeStamp - d.at < 80 ? d.speed : 0;
+    glide(leftOf(swipeTarget(d.from, tabs.length, moved, Math.abs(next - home), speed)));
+  };
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    el.addEventListener('touchstart', touchStart, { passive: true });
+    el.addEventListener('touchmove', touchMove, { passive: false });
+    el.addEventListener('touchend', touchEnd);
+    el.addEventListener('touchcancel', touchEnd);
+    return () => {
+      el.removeEventListener('touchstart', touchStart);
+      el.removeEventListener('touchmove', touchMove);
+      el.removeEventListener('touchend', touchEnd);
+      el.removeEventListener('touchcancel', touchEnd);
+    };
+  });
   const lowerList = (
     <div className="lower-list" ref={lower}>
       <p className="context">
@@ -645,17 +733,14 @@ function PhoneTree({ m, frames, tab, onOpen, onGo }: { m: Model; frames: ReturnT
           const t0 = m.views.get(col[0]);
           const long = m.names[i].long;
           return (
-            <span key={i}>
-              <span className="swipe-snap" style={{ left: i * P.stride }} />
-              <span className="lbl" style={{ left: phoneX(i) }}>
-                {i > tab && long === 'Medal games' ? 'Medals' : long}
-                {i <= tab && t0 && (
-                  <>
-                    {' '}
-                    · <span className="d">{timeOf(t0.g.start, c.t.timeZone)}</span>
-                  </>
-                )}
-              </span>
+            <span key={i} className="lbl" style={{ left: phoneX(i) }}>
+              {i > tab && long === 'Medal games' ? 'Medals' : long}
+              {i <= tab && t0 && (
+                <>
+                  {' '}
+                  · <span className="d">{timeOf(t0.g.start, c.t.timeZone)}</span>
+                </>
+              )}
             </span>
           );
         })}

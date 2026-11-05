@@ -3,7 +3,7 @@ import { detectMapping } from '../src/mapping/detect';
 import { extract } from '../src/extract/extract';
 import { inferFormat } from '../src/format/infer';
 import { buildBoards } from '../src/engine/bracket';
-import { boardSections, columnNames, elbow, layoutColumns, pageHeightAt, roundFrames, roundPositions } from '../src/ui/bracketLayout';
+import { boardSections, columnNames, elbow, layoutColumns, pageHeightAt, roundFrames, roundPositions, swipeTarget } from '../src/ui/bracketLayout';
 import type { Tournament } from '../src/model/types';
 import { loadFixture, type FixtureName } from './helpers/fixtures';
 
@@ -69,6 +69,28 @@ describe('swiping between rounds on a phone', () => {
     expect(pageHeightAt([100, 300, 200], 2)).toBe(200);
     expect(pageHeightAt([100, 300, 200], -1)).toBe(100);
     expect(pageHeightAt([100, 300, 200], 7)).toBe(200);
+  });
+});
+
+describe('where a swipe settles', () => {
+  it('moves one page at most, however far the finger went', () => {
+    expect(swipeTarget(0, 4, 276, 276, 0)).toBe(1);
+    expect(swipeTarget(0, 4, 900, 276, 3)).toBe(1);
+    expect(swipeTarget(2, 4, -900, 276, -3)).toBe(1);
+  });
+  it('needs a real drag or a flick to change page', () => {
+    expect(swipeTarget(1, 4, 40, 276, 0)).toBe(1);
+    expect(swipeTarget(1, 4, 100, 276, 0)).toBe(2);
+    expect(swipeTarget(1, 4, 40, 276, 0.6)).toBe(2);
+    expect(swipeTarget(1, 4, -40, 276, -0.6)).toBe(0);
+  });
+  it('stays put when flicked back against the drag', () => {
+    expect(swipeTarget(1, 4, 200, 276, -0.6)).toBe(1);
+    expect(swipeTarget(1, 4, -200, 276, 0.6)).toBe(1);
+  });
+  it('stops at the first and last pages', () => {
+    expect(swipeTarget(0, 4, -100, 276, -1)).toBe(0);
+    expect(swipeTarget(3, 4, 100, 276, 1)).toBe(3);
   });
 });
 

@@ -89,9 +89,7 @@
 .round-tabs { display: flex; margin: -4px calc(-1 * var(--pad)) 0; padding: 0 8px; background: var(--surface); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
 .round-tabs button { flex: 1 0 auto; min-height: 44px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--ink3); font: 600 14px Inter, sans-serif; white-space: nowrap; }
 .round-tabs button.on { color: var(--ink); font-weight: 700; border-bottom-color: var(--ink); }
-.swipe { position: relative; display: flex; align-items: flex-start; margin: 0 calc(-1 * var(--pad)); overflow: auto hidden; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
-.swipe::-webkit-scrollbar { display: none; }
-.swipe-snap { position: absolute; top: 0; width: 1px; height: 1px; scroll-snap-align: start; scroll-snap-stop: always; }
+.swipe { position: relative; display: flex; align-items: flex-start; margin: 0 calc(-1 * var(--pad)); overflow: hidden; touch-action: pan-y pinch-zoom; }
 .ptree-world { flex: none; }
 .ptree-heads { position: relative; height: 26px; }
 .ptree-heads .lbl { position: absolute; top: 0; line-height: 18px; white-space: nowrap; }
@@ -115,7 +113,7 @@
 .prev-row b { font-size: 16px; }
 .lower-list { display: flex; flex-direction: column; gap: 14px; }
 .lower-list > .lbl { margin-top: 4px; }
-.swipe .lower-list { flex: 0 0 100%; box-sizing: border-box; padding: 0 var(--pad); scroll-snap-align: start; scroll-snap-stop: always; }
+.swipe .lower-list { flex: 0 0 100%; box-sizing: border-box; padding: 0 var(--pad); }
 .lg { display: flex; flex-direction: column; gap: 6px; }
 .lg-head { display: flex; align-items: baseline; gap: 8px; }
 .lg-head b { font-size: 15px; }
