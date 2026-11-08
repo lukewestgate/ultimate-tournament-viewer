@@ -65,6 +65,44 @@ export function navigate(r: Route | string, replace = false) {
   if (replace) window.dispatchEvent(new HashChangeEvent('hashchange'));
 }
 
+// ---- Back: each history entry is stamped with its place in the app's history and the page before it,
+// so a Back button can step back when the page before is the one it means, and otherwise go there in place.
+
+type NavState = { tvIdx?: number; tvPrev?: string };
+const navState = (): NavState => (history.state && typeof history.state === 'object' ? history.state : {});
+const pathOf = (h: string) => h.replace(/^#\/?/, '').split('?')[0];
+let lastIdx = -1;
+let lastHash = '';
+
+function stamp() {
+  const s = navState();
+  if (typeof s.tvIdx !== 'number') {
+    // A new entry (a link, or `location.hash = …`): it comes after the one we were on.
+    const next: NavState = lastIdx < 0 ? { tvIdx: 0 } : { tvIdx: lastIdx + 1, tvPrev: lastHash };
+    history.replaceState({ ...s, ...next }, '');
+  }
+  lastIdx = navState().tvIdx!;
+  lastHash = location.hash;
+}
+// Not in tests, which import this module without a browser.
+if (typeof window !== 'undefined') {
+  stamp();
+  window.addEventListener('hashchange', stamp);
+  window.addEventListener('popstate', stamp);
+}
+
+/**
+ * Leave a page for its parent. If the page before in history is the parent (or, with no parent given,
+ * any page of the app), step back to it; otherwise replace this entry with the parent (or `fallback`).
+ * It never adds an entry, so pressing Back again and again always ends up out, never in a loop.
+ */
+export function goUp(parent: string | undefined, fallback: string) {
+  const s = navState();
+  const hasPrev = (s.tvIdx ?? 0) > 0;
+  if (hasPrev && (parent === undefined || (s.tvPrev !== undefined && pathOf(s.tvPrev) === pathOf(parent)))) history.back();
+  else navigate(parent ?? fallback, true);
+}
+
 export function useRoute(): Route {
   const [route, setRoute] = useState(() => parseHash(location.hash));
   useEffect(() => {

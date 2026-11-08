@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useMaybeT, useT } from './ctx';
 import { ago, initials, plural } from './fmt';
 import { IBrackets, IChevronDown, IChevronLeft, IInfo, INow, IOffline, IPools, IRefresh, ISchedule, ISearch, ITeams, IWarn, IWhatIf, IClose, IStar } from './icons';
-import { href, navigate, setParams, tHref, type TournamentTab } from './router';
+import { goUp, href, navigate, setParams, tHref, type TournamentTab } from './router';
 import { useOverlay } from './overlay';
 import { store } from '../store/app';
 import { isOnToday } from '../store/launch';
@@ -333,19 +333,18 @@ export function TournamentShell({ children }: { children: ReactNode }) {
 /** Sub-page layout (settings, diagnostics, editors): back button, title and subtitle, optional action. */
 export function SubPage({ title, sub, back, action, children, wide }: { title: string; sub?: string; back?: string; action?: ReactNode; children: ReactNode; wide?: boolean }) {
   const c = useMaybeT();
+  const fallback = c ? tHref(c.id, 'info') : href({ name: 'home' });
   return (
     <div className="app-shell sub-shell">
       <header className="sub-hdr">
         <div className="sub-hdr-row">
           <a
             className="ib"
-            href={back ?? (c ? tHref(c.id, 'info') : href({ name: 'home' }))}
+            href={back ?? fallback}
             aria-label="Back"
             onClick={(e) => {
-              if (!back && history.length > 1) {
-                e.preventDefault();
-                history.back();
-              }
+              e.preventDefault();
+              goUp(back, fallback);
             }}
           >
             <IChevronLeft />

@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { useT } from '../ctx';
 import { useOverlay } from '../overlay';
 import { Empty, Seg } from '../parts';
-import { navigate, tHref } from '../router';
+import { goUp, tHref } from '../router';
 import { SubPage } from '../Shell';
 import { store } from '../../store/app';
 import { cell, colName, findTab, width } from '../../sheets/workbook';
@@ -147,7 +147,7 @@ export function Manual(_: ScreenProps) {
     const before = { mapping: s?.mapping, format: s?.format };
     store.runtime(c.id).setMapping({ ...draft, mode: 'manual' }, undefined, 'Before your mapping');
     overlay.toast('Saved. The reading before is in History.', { label: 'Undo', run: () => store.runtime(c.id).setMapping(before.mapping, before.format) });
-    navigate(tHref(c.id, 'settings'));
+    goUp(tHref(c.id, 'settings'), tHref(c.id, 'settings'));
   };
   const has = (r: string) => [...roles.cols.values()].includes(r);
   const gridSrc = draft.games.some((g) => g.kind === 'grid' && g.tab === tabName);

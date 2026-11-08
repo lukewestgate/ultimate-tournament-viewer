@@ -1,6 +1,6 @@
 import { useT } from '../ctx';
 import { SubPage } from '../Shell';
-import { navigate, tHref } from '../router';
+import { goUp, tHref } from '../router';
 import { useOverlay } from '../overlay';
 import { store } from '../../store/app';
 import type { SavedReading } from '../../store/settings';
@@ -15,7 +15,7 @@ export function HistoryPage() {
   const goBack = (saved: SavedReading | undefined, label: string) => {
     store.runtime(c.id).setMapping(saved?.mapping, saved?.format, 'Before going back');
     overlay.toast(`Back to “${label}”. The reading you left is in History.`);
-    navigate(tHref(c.id, 'settings'));
+    goUp(tHref(c.id, 'settings'), tHref(c.id, 'settings'));
   };
   const rows: { key: string; label: string; at?: number; saved?: SavedReading }[] = [
     ...(s.history ?? []).map((h, i) => ({ key: `h${i}`, label: h.label, at: h.at, saved: h })),
