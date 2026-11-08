@@ -47,8 +47,10 @@ tools/      the Apps Script behind the featured sheet
 
 - **Data.** The app loads the whole workbook (xlsx) on open and every 10 minutes. While the page is visible it polls the tabs that hold games and pool tables as CSV every minute. It backs off after failures and re-renders only when content changed.
 - **Reading the sheet.** **Auto** detection handles game lists, time × pitch grids, pool tables, seeding, final standings and the UKU template. Where Auto gets it wrong:
-  - **Manual mapping:** tap cells in a preview of the sheet.
-  - **Improve with AI:** use your own OpenRouter key. The AI only proposes a mapping; you see a before/after comparison and choose whether to use it.
+  - **Reading** (Info → Reading) says whether the sheet was read right and lists anything worth checking, each with its fix.
+  - **Fix with AI:** use your own OpenRouter key. The AI only proposes a reading; you see what would change and choose whether to use it.
+  - **Map it yourself:** tap cells in a preview of the sheet, step by step.
+  - Every big change keeps the reading before it in **History**, so it can be compared or undone.
 - **Engine.** Rules and tie-breaks follow the tournament's settings: the UKU §6 preset by default, 3/1/0 points, editable. Predictions (possible opponents, brackets, paths) come from a progression *format*, which is checked against the names the sheet fills in later.
 
 ## Featured tournaments
@@ -66,7 +68,7 @@ Featured tournaments appear on everyone's Home, with a reading you've fixed once
 
 The key stays in your browser and the script's properties. Never put it in the repo or the sheet, as both are public. To change it, edit `ADMIN_KEY` and enter the new value in the app. If you edit the script, deploy a new version of the web app.
 
-**Publishing:** add the tournament as normal, fix its reading, then press **Publish** in **How this sheet is read**. Later fixes stay on your device until you press **Update**.
+**Publishing:** add the tournament as normal, fix its reading, then press **Publish** on its **Reading** page. Later fixes stay on your device until you press **Update**.
 
 **The sheet:** each row is a tournament. You can edit it by hand, for example to correct a title or dates, and clearing **show** hides a row. Publishing again rewrites everything except **show**. Dates are `yyyy-mm-dd`, names are separated by `|`, and the app skips rows it can't use.
 

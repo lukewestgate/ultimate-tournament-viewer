@@ -162,7 +162,7 @@ export function AppSettings() {
   );
 }
 
-/** Where the featured sheet's script is. With both filled in, tournaments can be published from How this sheet is read. */
+/** Where the featured sheet's script is. With both filled in, tournaments can be published from Reading. */
 function AdminAccess() {
   const s = useStore();
   const [url, setUrl] = useState(s.app.adminUrl ?? '');

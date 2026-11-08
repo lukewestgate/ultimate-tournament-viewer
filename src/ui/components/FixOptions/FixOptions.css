@@ -1,0 +1,9 @@
+.fixopts { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.fixopts h3 { font-size: 15px; font-weight: 700; margin: 0; }
+.fixopt { display: flex; align-items: center; gap: 12px; }
+.fixopt-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 14px; }
+.fixopt-text small { font-size: 12px; color: var(--ink3); }
+.fixopt .btn { flex: none; }
+.fixopt-key { margin: 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink3); }
+.fixopt-key .link-btn { font-size: 13px; padding: 0; color: var(--whatif); }
+.t-dark .btn.violet { color: #0d1015; }

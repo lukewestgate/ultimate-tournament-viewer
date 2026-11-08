@@ -52,7 +52,7 @@ export function Switcher() {
           <IList size={18} /> <b>All tournaments</b>
         </button>
         <button className="sw-row action" onClick={() => go(tHref(c.id, 'settings'))}>
-          <ISettings size={18} /> <b>How this sheet is read</b>
+          <ISettings size={18} /> <b>Reading</b>
         </button>
       </div>
     </div>

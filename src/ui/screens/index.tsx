@@ -10,7 +10,7 @@ import { Pools } from './Pools';
 import { Brackets, StandingsScreen } from './Brackets';
 import { Info } from './Info';
 const WhatIf = lazy(() => import('./WhatIf').then((m) => ({ default: m.WhatIf })));
-const Settings = lazy(() => import('./Settings').then((m) => ({ default: m.Settings })));
+const Reading = lazy(() => import('./Reading').then((m) => ({ default: m.Reading })));
 const AppSettings = lazy(() => import('./AppSettings').then((m) => ({ default: m.AppSettings })));
 const Diagnostics = lazy(() => import('./Diagnostics').then((m) => ({ default: m.Diagnostics })));
 const Manual = lazy(() => import('./Manual').then((m) => ({ default: m.Manual })));
@@ -31,5 +31,5 @@ export const screens: {
   Home,
   Add,
   AppSettings,
-  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen, whatif: WhatIf, settings: Settings, diagnostics: Diagnostics, manual: Manual, format: FormatEditor, review: Review },
+  tournament: { now: Now, schedule: Schedule, teams: Teams, team: Team, pools: Pools, brackets: Brackets, info: Info, standings: StandingsScreen, whatif: WhatIf, settings: Reading, diagnostics: Diagnostics, manual: Manual, format: FormatEditor, review: Review },
 };

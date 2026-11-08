@@ -54,3 +54,19 @@ export async function copyOrShare(url: string, title: string, toast: (t: string)
   await navigator.clipboard?.writeText(url).catch(() => undefined);
   toast('Link copied.');
 }
+
+/**
+ * Change the reading straight away and offer Undo in the toast, instead of asking "are you sure". For small
+ * corrections; big changes (AI, mapping, starting over) go through `setMapping` with a History label instead.
+ */
+export function editWithUndo(c: TCtx, toast: (text: string, action?: { label: string; run: () => void }) => void, text: string, fn: (m: Mapping) => Mapping) {
+  const before: Mapping = JSON.parse(JSON.stringify(c.p.mapping));
+  editMapping(c, fn);
+  toast(text, {
+    label: 'Undo',
+    run: () => {
+      store.runtime(c.id).setMapping(before);
+      store.emit();
+    },
+  });
+}

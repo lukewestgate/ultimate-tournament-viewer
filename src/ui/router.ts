@@ -4,6 +4,8 @@ export type Route =
   | { name: 'home' }
   | { name: 'add'; link?: string }
   | { name: 'appSettings' }
+  /** Development only: every shared component with sample props. */
+  | { name: 'gallery' }
   | { name: 'tournament'; id: string; tab: TournamentTab; arg?: string };
 
 export type TournamentTab =
@@ -35,6 +37,7 @@ export function parseHash(hash: string): Route {
   }
   if (parts[0] === 'add') return { name: 'add' };
   if (parts[0] === 'settings') return { name: 'appSettings' };
+  if (parts[0] === 'gallery') return { name: 'gallery' };
   return { name: 'home' };
 }
 
@@ -46,6 +49,8 @@ export function href(r: Route): string {
       return '#/add';
     case 'appSettings':
       return '#/settings';
+    case 'gallery':
+      return '#/gallery';
     case 'tournament':
       return `#/t/${encodeURIComponent(r.id)}/${r.tab}${r.arg ? `/${encodeURIComponent(r.arg)}` : ''}`;
   }

@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState, type ReactNode } from 'react';
+import { Suspense, lazy, useEffect, useState, type ReactNode } from 'react';
 import { store, useStore } from '../store/app';
 import { launchTarget } from '../store/launch';
 import { parseSheetLink, sourceKey } from '../sheets/links';
@@ -10,6 +10,9 @@ import { TournamentProvider, useT } from './ctx';
 import { TournamentShell } from './Shell';
 import { screens } from './screens';
 import { PwaPrompts } from './Pwa';
+
+// Development only: never in production builds.
+const Gallery = import.meta.env.DEV ? lazy(() => import('./Gallery').then((m) => ({ default: m.Gallery }))) : () => null;
 
 function useTheme() {
   const s = useStore();
@@ -109,6 +112,12 @@ function RouteView({ route }: { route: Route }) {
       return (
         <Suspense fallback={<Loading text="Loading…" />}>
           <screens.AppSettings />
+        </Suspense>
+      );
+    case 'gallery':
+      return (
+        <Suspense fallback={<Loading text="Loading…" />}>
+          <Gallery />
         </Suspense>
       );
     case 'tournament':

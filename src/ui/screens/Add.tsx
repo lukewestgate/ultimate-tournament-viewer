@@ -11,7 +11,9 @@ import { dateLabel, plural } from '../fmt';
 import { IWarn } from '../icons';
 import { useOverlay } from '../overlay';
 import { TeamPicker } from '../TeamPicker';
-import { AiCta } from '../AiCta';
+import { FixOptions } from '../components';
+import { useOpenAi, addKey } from '../FixWithAi';
+import { readingCounts } from '../../mapping/issues';
 
 /** Paste field with validation as you type, and a paste button where allowed. */
 export function AddForm({ onSubmit }: { onSubmit?: (id: string) => void }) {
@@ -136,15 +138,13 @@ function Preview() {
   const overlay = useOverlay();
   const t = c.t;
   const problems = problemsOnly(c.p.problems);
+  const openAi = useOpenAi();
   if (!t.games.length) {
     return (
       <div className="card pad stack">
         <h2>No games found</h2>
-        <p className="muted">We opened “{t.title}” but couldn’t find the games. Let AI have a go, or show us where they are.</p>
-        <AiCta noGames />
-        <a className="btn" href={tHref(c.id, 'manual')}>
-          Map it by hand
-        </a>
+        <p className="muted">We opened “{t.title}” but couldn’t find the games.</p>
+        <FixOptions hasKey={Boolean(store.app.aiKey)} noGames onAi={openAi} onMap={() => navigate(tHref(c.id, 'manual'))} onAddKey={addKey} />
       </div>
     );
   }
@@ -154,7 +154,7 @@ function Preview() {
         <h2>{t.title}</h2>
         <dl className="kv">
           <dt>Games</dt>
-          <dd>{t.games.filter((g) => !g.unscheduled).length}</dd>
+          <dd>{readingCounts(t).games}</dd>
           <dt>Days</dt>
           <dd>
             {t.days.map((d) => `${dateLabel(d.date)}${d.dateSource === 'guessed' ? ' (guessed)' : ''}`).join(', ')}
@@ -183,7 +183,7 @@ function Preview() {
             </div>
           </div>
         )}
-        {problems.length > 0 && <AiCta problems={problems.length} />}
+        {problems.length > 0 && <FixOptions hasKey={Boolean(store.app.aiKey)} onAi={openAi} onMap={() => navigate(tHref(c.id, 'manual'))} onAddKey={addKey} />}
         <a className="btn primary block big" href={tHref(c.id)}>
           Open
         </a>
@@ -192,10 +192,9 @@ function Preview() {
             Pick your team(s)
           </button>
           <a className="btn" href={tHref(c.id, 'review')}>
-            Check what was read
+            Check the reading
           </a>
         </div>
-        {problems.length === 0 && <AiCta />}
       </div>
     </div>
   );

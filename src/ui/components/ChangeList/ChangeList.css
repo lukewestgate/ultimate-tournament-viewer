@@ -1,0 +1,9 @@
+.changes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.change { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.4; }
+.change:first-child { border-top: 0; }
+.change small { display: block; font-size: 12px; color: var(--ink3); }
+.change-sign { flex: none; width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font: 800 13px Inter, sans-serif; }
+.change-sign.add { background: var(--win-soft); color: var(--win); }
+.change-sign.fix { background: var(--accent-soft); color: var(--accent); }
+.change-sign.remove { background: var(--live-soft); color: var(--live); }
+.changes-empty { margin: 0; }

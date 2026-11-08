@@ -1,0 +1,31 @@
+/* Reading and its sub-pages (redesign: Reading brief). Components carry their own CSS; this is page layout. */
+.rd-grid { display: flex; flex-direction: column; gap: 16px; }
+.rd-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+@media (min-width: 900px) { .rd-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; align-items: start; } }
+.rd-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 18px; padding-top: 4px; }
+.rd-foot .link-btn { font-size: 13px; color: var(--ink3); }
+.rd-foot .link-btn.danger-text { color: var(--error); }
+.glist .grow-row .chev { color: var(--ink3); flex: none; }
+.glist .grow-row .grow-value { white-space: nowrap; }
+.rd-fold > summary { list-style: none; cursor: pointer; }
+.rd-fold > summary::-webkit-details-marker { display: none; }
+.rd-fold[open] > summary .chev { transform: rotate(90deg); }
+.rd-fold-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.rd-mini { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.rd-mini > span:first-child { flex: 1; min-width: 0; }
+.rd-hist { flex-wrap: wrap; }
+.rd-hist .grow-label { min-width: 160px; }
+.tb-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 16px; min-height: 52px; font-size: 14px; }
+.tb-row .tb-n { font: 700 18px 'Barlow Condensed', sans-serif; color: var(--ink3); width: 18px; }
+.tb-row .tb-label { flex: 1; min-width: 0; }
+.tb-row .ib { min-width: 40px; height: 40px; color: var(--ink3); }
+.tb-row .ib:disabled { opacity: .3; }
+.rot180 { transform: rotate(180deg); }
+/* Map it yourself */
+.man-tab-pick { display: block; margin-top: 6px; max-width: 100%; }
+.man-sheet { overflow: hidden; }
+.man-first > summary { list-style: none; }
+.man-first > summary::-webkit-details-marker { display: none; }
+.man-first .man-games { padding: 0 16px 14px; }
+.man-foot { margin: 0; }
+.man-foot .link-btn { font-size: 13px; padding: 0; }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useT } from '../ctx';
 import { useOverlay } from '../overlay';
 import { Empty, Seg } from '../parts';
@@ -29,10 +29,13 @@ import {
   setListHeader,
   setSeeding,
 } from '../../mapping/manual';
-import { shareLink, copyOrShare } from '../mappingEdit';
-import { useOpenAi } from '../AiCta';
+import { useOpenAi } from '../FixWithAi';
 import { timeOf } from '../fmt';
 import type { ScreenProps } from './index';
+import { readingCounts } from '../../mapping/issues';
+import { StepTabs, TapList, SheetGrid, LiveBar, type StepState } from '../components';
+import { IChevronDown, IClose } from '../icons';
+import '../styles/reading.css';
 
 type Target = 'list' | 'grid' | 'pool' | 'seeding' | 'info';
 const MAX_ROWS = 200;
@@ -131,14 +134,6 @@ export function Manual(_: ScreenProps) {
     }
   };
 
-  const hint: Record<Target, string> = {
-    list: listSrc ? 'Tap a cell to give its column a role (Time, Team 1, Score 1…). Tap a row number to move the header row.' : 'Tap the header row of the game list.',
-    grid: draft.games.some((g) => g.kind === 'grid' && g.tab === tabName) ? 'Tap the cells of one pitch block to label them (team, score, slot, time), or a shared time column.' : 'Tap a separator (“v”) cell of one pitch block.',
-    pool: poolHeader === undefined ? 'Tap the header row of a pool table.' : 'Tap the team column, then the stat columns (W, L, Pts…). Tap a row number for another table.',
-    seeding: !seedStep.first ? 'Tap the first seed number.' : seedStep.last === undefined ? 'Tap the last seed number.' : 'Tap a cell in the team column.',
-    info: 'Choose which tabs hold rules and format text.',
-  };
-
   const rows = Math.min(MAX_ROWS, tab?.rows.length ?? 0);
   const cols = Math.min(MAX_COLS, tab ? width(tab) : 0);
   const inUse = (name: string) => draft.games.some((g) => g.tab === name) || draft.pools.some((p) => p.tab === name) || draft.seeding.some((s) => s.tab === name) || draft.info.includes(name);
@@ -148,20 +143,59 @@ export function Manual(_: ScreenProps) {
     setSeedStep({});
   };
   const save = () => {
-    store.runtime(c.id).setMapping({ ...draft, mode: 'manual' }, undefined, 'Before your manual changes');
-    overlay.toast('Saved. Here’s what changed.');
-    navigate(tHref(c.id, 'review', 'h0'));
+    const s = store.get(c.id);
+    const before = { mapping: s?.mapping, format: s?.format };
+    store.runtime(c.id).setMapping({ ...draft, mode: 'manual' }, undefined, 'Before your mapping');
+    overlay.toast('Saved. The reading before is in History.', { label: 'Undo', run: () => store.runtime(c.id).setMapping(before.mapping, before.format) });
+    navigate(tHref(c.id, 'settings'));
   };
-  const question: Record<Target, string> = {
-    list: 'Which tab has the games?',
-    grid: 'Which tab has the games?',
-    pool: 'Which tab has the pool tables?',
-    seeding: 'Which tab has the seeding?',
-    info: 'Which tabs hold rules and format text?',
+  const has = (r: string) => [...roles.cols.values()].includes(r);
+  const gridSrc = draft.games.some((g) => g.kind === 'grid' && g.tab === tabName);
+  const poolOnTab = draft.pools.some((x) => x.tab === tabName);
+  const seedOnTab = draft.seeding.some((x) => x.tab === tabName);
+  // Each tap is done, the one to do now, or still to come.
+  const seq = (items: [ReactNode, boolean][]) => items.map(([text, done], i) => ({ text, state: (done ? 'done' : items.slice(0, i).every(([, d]) => d) ? 'now' : 'todo') as 'done' | 'now' | 'todo' }));
+  const tabPick: [ReactNode, boolean] = [
+    <>
+      Pick the tab
+      <select className="pick-select man-tab-pick" value={tabName} onChange={(e) => pickTab(e.target.value)} aria-label="Tab">
+        {[...visible, ...hidden].map((t) => (
+          <option key={t.name} value={t.name}>
+            {t.name}
+            {t.hidden ? ' (hidden)' : ''}
+            {c.p.hints[t.name] ? ` · looks like ${c.p.hints[t.name].toLowerCase()}` : ''}
+            {inUse(t.name) ? ' · in use' : ''}
+          </option>
+        ))}
+      </select>
+    </>,
+    true,
+  ];
+  const taps: Record<Target, [ReactNode, boolean][]> = {
+    list: [tabPick, ['Tap the header row of the game list', Boolean(listSrc)], ['Tap the Time column, then each team column', has('time') && has('team1') && has('team2')], ['Tap the other columns: day, pitch, scores (optional)', has('day') || has('pitch') || has('score1')]],
+    grid: [tabPick, ['Tap a “v” between two teams in one pitch block', gridSrc], ['Tap that block’s cells to label them: teams, scores, time', gridSrc && roles.cols.size > 0]],
+    pool: [tabPick, ['Tap the header row of a pool table', poolHeader !== undefined || poolOnTab], ['Tap the team column, then each stat column (W, L, Pts…)', poolOnTab], ['Tap another table’s header row to add it (optional)', draft.pools.filter((x) => x.tab === tabName).length > 1]],
+    seeding: [tabPick, ['Tap the first seed number', Boolean(seedStep.first) || seedOnTab], ['Tap the last seed number', seedStep.last !== undefined || seedOnTab], ['Tap a cell in the team column', seedOnTab]],
+    info: [['Tick each tab that holds rules or format text', draft.info.length > 0]],
   };
+  type Step = 'games' | 'pool' | 'seeding' | 'info';
+  const step: Step = target === 'list' || target === 'grid' ? 'games' : target;
+  const steps: { key: Step; label: string; state: StepState }[] = [
+    { key: 'games', label: 'Games', state: draft.games.length ? 'done' : 'warn' },
+    { key: 'pool', label: 'Pool tables', state: draft.pools.length ? 'done' : 'todo' },
+    { key: 'seeding', label: 'Seeding', state: draft.seeding.length ? 'done' : 'todo' },
+    { key: 'info', label: 'Rules text', state: draft.info.length ? 'done' : 'todo' },
+  ];
+  const pickStep = (k: Step) => {
+    const next: Target = k === 'games' ? ((draft.games.find((g) => g.tab === tabName)?.kind ?? 'list') as Target) : k;
+    setTarget(next);
+    setPoolHeader(undefined);
+    setSeedStep({});
+  };
+  const counts = preview && 't' in preview && preview.t ? readingCounts(preview.t) : undefined;
   return (
     <SubPage
-      title="Edit how it’s read"
+      title="Map it yourself"
       sub={c.t.title}
       back={tHref(c.id, 'settings')}
       wide
@@ -171,112 +205,55 @@ export function Manual(_: ScreenProps) {
         </button>
       }
     >
-      <Seg<Target>
-        label="What to map"
-        className="scroll-seg"
-        value={target}
-        options={[
-          { value: 'list', label: 'Games (list)' },
-          { value: 'grid', label: 'Games (grid)' },
-          { value: 'pool', label: 'Pool tables' },
-          { value: 'seeding', label: 'Seeding' },
-          { value: 'info', label: 'Rules text' },
-        ]}
-        onChange={(v) => (setTarget(v), setPoolHeader(undefined), setSeedStep({}))}
-      />
-      <div className="man-grid">
-        <div className="man-main">
-          <p className="man-q">{question[target]} We’ve marked what we found automatically.</p>
-          <section className="card set-list man-tabs" role="radiogroup" aria-label="Tabs">
-            {visible.map((t) =>
-              target === 'info' ? (
-                <label key={t.name} className="set-row man-tab">
-                  <input type="checkbox" checked={draft.info.includes(t.name)} onChange={(e) => setDraft({ ...draft, info: e.target.checked ? [...draft.info, t.name] : draft.info.filter((x) => x !== t.name) })} />
-                  <span className="set-label">
-                    <b>{t.name}</b>
-                    {c.p.hints[t.name] && <small>Looks like: {c.p.hints[t.name].toLowerCase()}</small>}
-                  </span>
-                </label>
-              ) : (
-                <label key={t.name} className={`set-row man-tab${t.name === tabName ? ' on' : ''}`}>
-                  <input type="radio" name="tab" checked={t.name === tabName} onChange={() => pickTab(t.name)} />
-                  <span className="set-label">
-                    <b>{t.name}</b>
-                    {c.p.hints[t.name] && <small>Looks like: {c.p.hints[t.name].toLowerCase()}</small>}
-                  </span>
-                  {inUse(t.name) && <span className="tag win sm">in use</span>}
-                </label>
-              ),
-            )}
-          </section>
-          {hidden.length > 0 && (
-            <details className="man-hidden">
-              <summary>Hidden tabs · {hidden.length}</summary>
-              <div className="sr-tries">
-                {hidden.map((t) => (
-                  <button key={t.name} className={`chip${t.name === tabName ? ' on' : ''}`} onClick={() => pickTab(t.name)}>
-                    {t.name}
-                  </button>
-                ))}
-              </div>
-            </details>
+      <StepTabs label="What to map" steps={steps} current={step} onPick={pickStep} />
+      {step === 'games' && <Seg<Target> label="How the games are laid out" value={target} options={[{ value: 'list', label: 'A list, one game per row' }, { value: 'grid', label: 'A grid of times × pitches' }]} onChange={(v) => (setTarget(v), setPoolHeader(undefined))} />}
+      {target === 'info' ? (
+        <section className="card set-list man-tabs">
+          <div className="pad">
+            <TapList items={seq(taps.info)} />
+          </div>
+          {visible.map((t) => (
+            <label key={t.name} className="set-row man-tab">
+              <input type="checkbox" checked={draft.info.includes(t.name)} onChange={(e) => setDraft({ ...draft, info: e.target.checked ? [...draft.info, t.name] : draft.info.filter((x) => x !== t.name) })} />
+              <span className="set-label">
+                <b>{t.name}</b>
+                {c.p.hints[t.name] && <small>Looks like: {c.p.hints[t.name].toLowerCase()}</small>}
+              </span>
+            </label>
+          ))}
+        </section>
+      ) : (
+        <section className="card man-sheet">
+          <div className="pad">
+            <TapList items={seq(taps[target])} />
+          </div>
+          {tab && (
+            <SheetGrid
+              label={`Preview of ${tabName}`}
+              rows={rows}
+              cols={cols}
+              text={(r, ci) => cell(tab, r, ci)}
+              col={(ci) => {
+                const role = roles.cols.get(ci);
+                return { name: colName(ci), role: role ? (ROLE_LABEL[role] ?? role) : undefined, color: role ? (ROLE_COLOR[role] ?? 'var(--ink3)') : undefined };
+              }}
+              isHeader={(r) => roles.header === r || poolHeader === r}
+              tint={(_, ci) => {
+                const role = roles.cols.get(ci);
+                return role ? (ROLE_COLOR[role] ?? '#5F6774') : undefined;
+              }}
+              selected={(r, ci) => (seedStep.first?.r === r && seedStep.first?.c === ci) || (seedStep.last === r && seedStep.first?.c === ci)}
+              onCell={onCell}
+              onRow={(r) => (target === 'pool' ? setPoolHeader(r) : target === 'list' ? setDraft(setListHeader(draft, tabName, r)) : undefined)}
+              rowLabel={(r) => `Use row ${r + 1} as the header`}
+            />
           )}
-          {target !== 'info' && (
-            <section className="card man-sheet">
-              <div className="man-hint">
-                <b>{tabName}</b> · {hint[target]}
-              </div>
-              <div className="sheet-preview" role="grid" aria-label={`Preview of ${tabName}`}>
-                <table>
-                  <thead>
-                    <tr>
-                      <th />
-                      {Array.from({ length: cols }, (_, ci) => {
-                        const role = roles.cols.get(ci);
-                        return (
-                          <th key={ci} style={role ? { boxShadow: `inset 0 3px 0 ${ROLE_COLOR[role] ?? 'var(--ink3)'}` } : undefined}>
-                            {colName(ci)}
-                            {role && <span className="role-tag">{ROLE_LABEL[role] ?? role}</span>}
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: rows }, (_, r) => (
-                      <tr key={r} className={roles.header === r || poolHeader === r ? 'hdr-row-m' : ''}>
-                        <th>
-                          <button
-                            className="row-num"
-                            aria-label={`Use row ${r + 1} as the header`}
-                            onClick={() => (target === 'pool' ? setPoolHeader(r) : target === 'list' ? setDraft(setListHeader(draft, tabName, r)) : undefined)}
-                          >
-                            {r + 1}
-                          </button>
-                        </th>
-                        {Array.from({ length: cols }, (_, ci) => {
-                          const role = roles.cols.get(ci);
-                          const sel = (seedStep.first?.r === r && seedStep.first?.c === ci) || (seedStep.last === r && seedStep.first?.c === ci);
-                          return (
-                            <td
-                              key={ci}
-                              onClick={() => onCell(r, ci)}
-                              className={sel ? 'sel' : ''}
-                              style={role ? { background: `color-mix(in srgb, ${ROLE_COLOR[role] ?? '#5F6774'} 18%, transparent)` } : undefined}
-                            >
-                              {cell(tab!, r, ci).slice(0, 30)}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
+        </section>
+      )}
 
-          <span className="lbl-head">Sources of games</span>
+      {step === 'games' && (
+        <>
+          <span className="lbl-head">Where games are read from</span>
           <section className="card set-list">
             {draft.games.map((g, i) => (
               <div key={i} className="set-row man-src">
@@ -297,132 +274,110 @@ export function Manual(_: ScreenProps) {
                 </span>
                 <span className="tb-btns">
                   <button className="ib" aria-label="Move up" disabled={i === 0} onClick={() => setDraft(moveSource(draft, i, -1))}>
-                    ↑
+                    <IChevronDown size={20} className="rot180" />
                   </button>
                   <button className="ib" aria-label="Move down" disabled={i === draft.games.length - 1} onClick={() => setDraft(moveSource(draft, i, 1))}>
-                    ↓
+                    <IChevronDown size={20} />
                   </button>
                   <button className="ib" aria-label="Remove source" onClick={() => setDraft(removeSource(draft, i))}>
-                    ×
+                    <IClose size={18} />
                   </button>
                 </span>
               </div>
             ))}
-            {!draft.games.length && <div className="set-row muted small">None yet: pick Games (list) or Games (grid) and tap the sheet.</div>}
+            {!draft.games.length && <div className="set-row muted small">None yet. Follow the steps above.</div>}
           </section>
-          <span className="small muted">If two sources list a game at the same time and pitch, the higher one wins.</span>
-
-          {draft.pools.length > 0 && (
-            <>
-              <span className="lbl-head">Pool tables</span>
-              <section className="card set-list">
-                {draft.pools.map((p, i) => (
-                  <div key={i} className="set-row">
-                    <input className="field mini-field" value={p.name} aria-label="Pool name" onChange={(e) => setDraft({ ...draft, pools: draft.pools.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} />
-                    <span className="small muted">
-                      {p.tab} rows {p.headerRow + 1}–{p.lastRow + 1}
-                    </span>
-                    <button className="ib" aria-label="Remove pool" onClick={() => setDraft(removePool(draft, i))}>
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </section>
-            </>
-          )}
-          {draft.seeding.length > 0 && (
-            <>
-              <span className="lbl-head">Seeding</span>
-              <section className="card set-list">
-                {draft.seeding.map((s, i) => (
-                  <div key={i} className="set-row">
-                    <span>
-                      {s.label ?? 'Seeds'} · {s.tab} rows {s.firstRow + 1}–{s.lastRow + 1}
-                    </span>
-                    <button className="ib" aria-label="Remove seeding" onClick={() => setDraft({ ...draft, seeding: draft.seeding.filter((_, j) => j !== i) })}>
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </section>
-            </>
-          )}
-        </div>
-
-        <aside className="man-side" aria-live="polite">
-          <section className="card set-pad">
-            <div className="card-title">
-              <b>What we read</b>
-              <span className="small muted">updates as you tap</span>
-            </div>
-            {preview && 'error' in preview ? (
-              <span className="err small">{preview.error}</span>
-            ) : preview ? (
-              <>
-                <div className="man-stats">
-                  {[
-                    [preview.t.games.length, 'games'],
-                    [preview.t.teams.length, 'teams'],
-                    [preview.t.days.length, 'days'],
-                    [preview.t.divisions.length, 'divisions'],
-                  ].map(([n, l]) => (
-                    <div key={l} className="man-stat">
-                      <b className="d">{n}</b>
-                      <span>{l}</span>
-                    </div>
-                  ))}
-                </div>
-                {preview.problems.length > 0 && (
-                  <div className="warn-card">
-                    <b>
-                      {preview.problems.length} problem{preview.problems.length === 1 ? '' : 's'}
-                    </b>
-                    {preview.problems.map((p) => (
-                      <span key={p.text}>{p.text}</span>
-                    ))}
-                  </div>
-                )}
-                <span className="lbl">First games</span>
-                <div className="man-games">
-                  {preview.t.games.slice(0, 6).map((g) => (
-                    <div key={g.id} className="man-game">
-                      <b className="d">
-                        {g.day.slice(0, 3)} {timeOf(g.start, preview.t.timeZone)}
-                      </b>
-                      <span>
-                        {g.teams[0] ?? g.slots[0] ?? '—'} {g.scores[0] !== undefined ? `${g.scores[0]}–${g.scores[1]}` : 'v'} {g.teams[1] ?? g.slots[1] ?? '—'}
-                      </span>
-                      <span className="muted">{!g.teams[0] || !g.teams[1] ? 'missing' : g.pitch.label ? `P${g.pitch.label}` : ''}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : null}
+          {draft.games.length > 1 && <span className="small muted">If two sources list a game at the same time and pitch, the higher one wins.</span>}
+        </>
+      )}
+      {step === 'pool' && draft.pools.length > 0 && (
+        <>
+          <span className="lbl-head">Pool tables read</span>
+          <section className="card set-list">
+            {draft.pools.map((x, i) => (
+              <div key={i} className="set-row">
+                <input className="field mini-field" value={x.name} aria-label="Pool name" onChange={(e) => setDraft({ ...draft, pools: draft.pools.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)) })} />
+                <span className="small muted">
+                  {x.tab} rows {x.headerRow + 1}–{x.lastRow + 1}
+                </span>
+                <button className="ib" aria-label="Remove pool" onClick={() => setDraft(removePool(draft, i))}>
+                  <IClose size={18} />
+                </button>
+              </div>
+            ))}
           </section>
-          <div className="two-btns">
-            <a className="btn" href={tHref(c.id, 'settings')}>
-              Corrections
-            </a>
-            <button className="btn violet-text" onClick={openAi}>
-              Improve with AI
-            </button>
+        </>
+      )}
+      {step === 'seeding' && draft.seeding.length > 0 && (
+        <>
+          <span className="lbl-head">Seeding read</span>
+          <section className="card set-list">
+            {draft.seeding.map((x, i) => (
+              <div key={i} className="set-row">
+                <span>
+                  {x.label ?? 'Seeds'} · {x.tab} rows {x.firstRow + 1}–{x.lastRow + 1}
+                </span>
+                <button className="ib" aria-label="Remove seeding" onClick={() => setDraft({ ...draft, seeding: draft.seeding.filter((_, j) => j !== i) })}>
+                  <IClose size={18} />
+                </button>
+              </div>
+            ))}
+          </section>
+        </>
+      )}
+
+      {preview && 'error' in preview && <p className="err small">{preview.error}</p>}
+      {counts && preview && 't' in preview && preview.t && preview.t.games.length > 0 && (
+        <details className="card man-first">
+          <summary className="set-row nav">
+            <span>First games read</span>
+          </summary>
+          <div className="man-games">
+            {preview.t.games.slice(0, 6).map((g) => (
+              <div key={g.id} className="man-game">
+                <b className="d">
+                  {g.day.slice(0, 3)} {timeOf(g.start, preview.t.timeZone)}
+                </b>
+                <span>
+                  {g.teams[0] ?? g.slots[0] ?? '—'} {g.scores[0] !== undefined ? `${g.scores[0]}–${g.scores[1]}` : 'v'} {g.teams[1] ?? g.slots[1] ?? '—'}
+                </span>
+                <span className="muted">{!g.teams[0] || !g.teams[1] ? 'missing' : g.pitch.label ? `P${g.pitch.label}` : ''}</span>
+              </div>
+            ))}
           </div>
-          <div className="two-btns">
-            <button className="btn" onClick={() => setDraft(detectMapping(wb).mapping)}>
-              Start over
-            </button>
-            <button
-              className="btn"
-              onClick={async () => {
-                store.runtime(c.id).setMapping({ ...draft, mode: 'manual' }, undefined, 'Before your manual changes');
-                await copyOrShare(await shareLink(c), c.t.title, overlay.toast);
-              }}
-            >
-              Share link
-            </button>
-          </div>
-        </aside>
-      </div>
+        </details>
+      )}
+      <p className="small muted man-foot">
+        {store.app.aiKey && (
+          <>
+            Stuck?{' '}
+            <button className="link-btn violet-text" onClick={openAi}>
+              Fix with AI
+            </button>{' '}
+            can do this for you. ·{' '}
+          </>
+        )}
+        <button className="link-btn" onClick={() => setDraft(detectMapping(wb).mapping)}>
+          Start over from what was found automatically
+        </button>
+      </p>
+
+      <LiveBar
+        action={
+          <button className="btn small" onClick={save}>
+            Save
+          </button>
+        }
+      >
+        {counts ? (
+          <>
+            Read so far: <b>{counts.games}</b> games · <b>{counts.teams}</b> teams · <b>{counts.pools}</b> pool tables
+            {preview && 'problems' in preview && preview.problems && preview.problems.length > 0 && ` · ${preview.problems.length} likely wrong`}
+          </>
+        ) : (
+          'Nothing read yet'
+        )}
+      </LiveBar>
     </SubPage>
   );
 }

@@ -35,7 +35,7 @@ export function Info(_: ScreenProps) {
           <IChevronRight size={18} />
         </a>
         <a className="nav-row" href={tHref(c.id, 'settings')}>
-          <ISliders size={20} /> How this sheet is read <span style={{ flex: 1 }} />
+          <ISliders size={20} /> Reading <span style={{ flex: 1 }} />
           <IChevronRight size={18} />
         </a>
       </div>
