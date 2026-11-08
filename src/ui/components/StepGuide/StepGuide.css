@@ -1,0 +1,18 @@
+.steptabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--surface2); overflow-x: auto; scrollbar-width: none; }
+.steptabs::-webkit-scrollbar { display: none; }
+.steptabs button { position: relative; flex: 1 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: var(--ink2); font: 600 13px Inter, sans-serif; white-space: nowrap; }
+.steptabs button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.steptabs-n { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; background: var(--line); color: var(--ink2); }
+.steptabs-n.done { background: var(--win); color: #fff; }
+.steptabs-n.warn { background: var(--cap); color: #fff; }
+.t-dark .steptabs-n.done, .t-dark .steptabs-n.warn { color: #0d1015; }
+.taplist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.taplist li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink3); }
+.taplist li:first-child { border-top: 0; }
+.taplist-n { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font: 700 12px Inter, sans-serif; }
+.taplist-text { flex: 1; min-width: 0; padding-top: 2px; }
+.taplist li.now { color: var(--ink); font-weight: 600; }
+.taplist li.now .taplist-n { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.taplist li.done { color: var(--ink2); }
+.taplist li.done .taplist-n { border-color: var(--win); background: var(--win); color: #fff; }
+.t-dark .taplist li.done .taplist-n { color: #0d1015; }

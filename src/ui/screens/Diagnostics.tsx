@@ -6,6 +6,8 @@ import { width } from '../../sheets/workbook';
 import { validateFormat } from '../../format/validate';
 import { IChevronRight, ICopy } from '../icons';
 import type { ScreenProps } from './index';
+import { editMapping } from '../mappingEdit';
+import type { EngineLevel } from '../../model/types';
 
 /** Diagnostics (spec §9.15; SpecSettings #4): quiet, for the curious and for testing. */
 export function Diagnostics(_: ScreenProps) {
@@ -46,6 +48,28 @@ export function Diagnostics(_: ScreenProps) {
           <span>warnings</span>
         </div>
       </div>
+
+      <span className="lbl-head">Prediction level</span>
+      <section className="card set-list">
+        <p className="set-row small muted" style={{ margin: 0 }}>
+          Normally worked out from how many next-opponent slots are known. Forcing it changes which brackets and paths are shown.
+        </p>
+        {Object.keys(c.view.levels).map((d) => (
+          <label key={d} className="set-row">
+            <span>{d || 'All games'}</span>
+            <select
+              className="mini-select field"
+              value={c.p.mapping.engineLevel?.[d] ?? ''}
+              onChange={(e) => editMapping(c, (x) => ({ ...x, engineLevel: { ...(x.engineLevel ?? {}), [d]: (e.target.value || undefined) as EngineLevel } }))}
+            >
+              <option value="">Automatic ({c.view.levels[d]})</option>
+              <option value="full">Full</option>
+              <option value="partial">Partial</option>
+              <option value="basic">Basic</option>
+            </select>
+          </label>
+        ))}
+      </section>
 
       <span className="lbl-head">Tabs</span>
       <section className="card table-scroll">

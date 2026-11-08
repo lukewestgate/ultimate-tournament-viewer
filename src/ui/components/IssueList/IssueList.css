@@ -1,0 +1,13 @@
+.issues { display: flex; flex-direction: column; overflow: hidden; }
+.issues > * + * { border-top: 1px solid var(--line); }
+.issue { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
+.issue-text { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.4; }
+.issue-text small { display: block; margin-top: 2px; font-size: 12px; color: var(--ink3); }
+.issue-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cap); flex: none; margin-top: 6px; }
+.issue-dot.bad { background: var(--error); }
+.issue-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-left: 18px; }
+.issue-acts .link-btn { font-size: 13px; color: var(--ink3); padding: 6px 4px; }
+.issue-acts input[type='date'] { min-height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+.issue-more { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 48px; border: 0; background: transparent; color: var(--accent); font: 600 14px Inter, sans-serif; }
+.issue-more:hover { background: var(--surface2); }
+.issue-more svg.up { transform: rotate(180deg); }

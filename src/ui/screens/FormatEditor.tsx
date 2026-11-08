@@ -3,7 +3,7 @@ import { useT } from '../ctx';
 import { useOverlay } from '../overlay';
 import { Seg } from '../parts';
 import { SubPage } from '../Shell';
-import { divKey, type Format, type Game, type Source, type SourceEntry } from '../../model/types';
+import { divKey, type EngineLevel, type Format, type Game, type Source, type SourceEntry } from '../../model/types';
 import { futureSlotKeys, gameKey, inferFormat, poolSlotKey } from '../../format/infer';
 import { validateFormat } from '../../format/validate';
 import { buildBoards } from '../../engine/bracket';
@@ -77,7 +77,12 @@ export function FormatEditor(_: ScreenProps) {
     });
     overlay.toast('Template applied.');
   };
-  const games = c.t.games.filter((g) => g.division === div && g.stage === 'placement' && !g.isBye);
+  const allGames = c.t.games.filter((g) => g.division === div && g.stage === 'placement' && !g.isBye);
+  // Unknown or disputed sides need someone; the rest are behind "Show all".
+  const needs = (key: string) => !f.sources[key] || f.sources[key].source.kind === 'unknown' || c.view.checks.get(key) === 'doubtful';
+  const needCount = keys.filter(needs).length;
+  const [showAll, setShowAll] = useState(false);
+  const games = showAll ? allGames : allGames.filter((g) => needs(gameKey(g.id, 0)) || needs(gameKey(g.id, 1)));
   const powerPools = c.t.pools.filter((p) => p.division === div && p.stage === 'powerPool');
   const boards = buildBoards(c.t, c.view.format).filter((b) => b.division === div);
   const [team, setTeam] = useState('');
@@ -107,14 +112,23 @@ export function FormatEditor(_: ScreenProps) {
     <SubPage title="How teams progress" sub={[c.t.title, div].filter(Boolean).join(' · ')}>
       {divs.length > 1 && <Seg label="Division" value={div ?? ''} options={divs.map((d) => ({ value: d ?? '', label: d ?? 'All' }))} onChange={(v) => setDiv(v || undefined)} className="scroll-seg" />}
       <section className="card fmt-level">
-        <span className={`tag sm ${level === 'full' ? 'win' : level === 'partial' ? 'soon' : 'quiet'}`}>{level === 'full' ? 'Full' : level === 'partial' ? 'Partial' : 'Basic'}</span>
-        <span>
-          {known} of {keys.length} future slots known
-        </span>
+        <b>{!keys.length ? 'No future games to predict' : known === keys.length ? 'Next opponents known for every game' : known ? `Next opponents known for ${known} of ${keys.length} team slots` : 'Next opponents not known yet'}</b>
         <span className="fmt-bar" aria-hidden="true">
           <b style={{ width: `${keys.length ? (known / keys.length) * 100 : 0}%` }} />
         </span>
+        <span className="small muted">{LEVEL_TEXT[level ?? 'basic']}</span>
       </section>
+      {needCount > 0 && !showAll && (
+        <span className="lbl-head">
+          Needs you · {needCount}
+        </span>
+      )}
+      {needCount === 0 && !showAll && keys.length > 0 && <p className="note">Every future game has a known source for both teams. Open them all to change one.</p>}
+      {(needCount > 0 || keys.length > 0) && (
+        <button className="btn" onClick={() => setShowAll(!showAll)} aria-expanded={showAll}>
+          {showAll ? 'Show only what needs you' : `Show all ${allGames.length} games`}
+        </button>
+      )}
       <label className="card set-row fmt-template">
         <b>Start from a template</b>
         <span className="muted small">optional</span>
@@ -144,12 +158,12 @@ export function FormatEditor(_: ScreenProps) {
                 <b>Pool {p.name}</b>
                 <span className="muted">power pool</span>
               </div>
-              {p.slots.map((s) => side(poolSlotKey(p.name, s.slot), `Pool ${p.name} · ${s.slot}`, 'Pool slot', s.team))}
+              {p.slots.filter((s) => showAll || needs(poolSlotKey(p.name, s.slot))).map((s) => side(poolSlotKey(p.name, s.slot), `Pool ${p.name} · ${s.slot}`, 'Pool slot', s.team))}
             </section>
           ))}
         </>
       )}
-      {games.length === 0 && <div className="empty">No placement games in this division.</div>}
+      {allGames.length === 0 && <div className="empty">No placement games in this division.</div>}
       {[...new Set(games.map((g) => g.start))].map((start) => {
         const at = games.filter((g) => g.start === start);
         return (
@@ -177,9 +191,8 @@ export function FormatEditor(_: ScreenProps) {
       })}
       <section className="card set-pad">
         <b>Final places & qualification</b>
-        <span className="small muted">
-          {placeNums.length ? `${ordinal(1)}–${ordinal(placeNums.length)} from the bracket` : 'No final places'} · {quals.length ? quals.map((q) => `${q.label}: ${ordinal(q.from)}–${ordinal(q.to)}`).join(', ') : 'no qualification places'}
-        </span>
+        <span className="small muted">{placeNums.length ? `${ordinal(1)}–${ordinal(placeNums.length)} from the bracket` : 'No final places'}</span>
+        <QualEdit division={div} current={quals} />
         {places.length > 0 && (
           <details className="small">
             <summary>Show places</summary>
@@ -220,7 +233,59 @@ export function FormatEditor(_: ScreenProps) {
           )}
         </section>
       )}
+      <section className="card set-pad">
+        <span className="small muted">Worked out from the game codes and labels in the sheet, then checked as results come in.</span>
+        <div className="row-btns">
+          <button
+            className="btn"
+            onClick={() => {
+              const before: Format = JSON.parse(JSON.stringify(c.p.format));
+              editFormat(c, () => undefined);
+              overlay.toast('Worked out again from the sheet.', { label: 'Undo', run: () => editFormat(c, () => before) });
+            }}
+          >
+            Work it out again
+          </button>
+        </div>
+        <span className="small muted">Fix with AI also fills in slots nothing else can work out. Forcing a prediction level is in Diagnostics.</span>
+      </section>
     </SubPage>
+  );
+}
+
+const LEVEL_TEXT: Record<EngineLevel, string> = {
+  full: 'Brackets, paths and “who could we play next” are all available.',
+  partial: 'Some brackets and paths are missing until the unknown slots are filled in.',
+  basic: 'Only the schedule and pool tables: brackets and paths need the slots below.',
+};
+
+/** Qualification places ("Div 1: 1-4, Div 2: 5-7"), typed as text. */
+function QualEdit({ division, current }: { division?: string; current: { label: string; from: number; to: number }[] }) {
+  const c = useT();
+  const text = current.map((x) => `${x.label}: ${x.from}-${x.to}`).join(', ');
+  return (
+    <label className="fieldset">
+      <span className="small">Qualification places</span>
+      <input
+        className="field"
+        key={text}
+        defaultValue={text}
+        placeholder="e.g. Div 1: 1-4, Div 2: 5-7"
+        onBlur={(e) => {
+          if (e.target.value === text) return;
+          const parsed = e.target.value
+            .split(',')
+            .map((p) => /^\s*(.+?)\s*:\s*(\d+)\s*[-–]\s*(\d+)\s*$/.exec(p))
+            .filter((x): x is RegExpExecArray => Boolean(x))
+            .map((x) => ({ label: x[1], from: Number(x[2]), to: Number(x[3]) }));
+          editFormat(c, (f) => {
+            f.divisions[divKey(division)] ??= { sources: {} };
+            f.divisions[divKey(division)].qualification = parsed;
+            return f;
+          });
+        }}
+      />
+    </label>
   );
 }
 

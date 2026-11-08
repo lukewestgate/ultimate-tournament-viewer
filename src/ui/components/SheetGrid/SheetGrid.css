@@ -1,0 +1,12 @@
+.sgrid-wrap { overflow: auto; max-height: 60vh; border-top: 1px solid var(--line); }
+.sgrid { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+.sgrid th { position: sticky; top: 0; z-index: 1; background: var(--surface2); color: var(--ink3); font-weight: 600; padding: 4px 8px; border: 1px solid var(--line); text-align: left; white-space: nowrap; min-width: 40px; }
+.sgrid-role { display: block; font-size: 10px; font-weight: 700; color: var(--ink); }
+.sgrid td { border: 1px solid var(--line); padding: 0 8px; height: 34px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.sgrid td.sel { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sgrid tr.hdr td { font-weight: 700; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+.sgrid tbody tr:hover td { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
+.sgrid-rn { position: sticky; left: 0; z-index: 2; padding: 0 !important; width: 36px; text-align: center !important; }
+thead .sgrid-rn, .sgrid thead th:first-child { left: 0; z-index: 3; }
+.sgrid-rn button { width: 100%; height: 34px; border: 0; background: transparent; color: var(--ink3); font: 600 12px Inter, sans-serif; }
+.sgrid-rn button:hover { background: var(--line); color: var(--ink); }

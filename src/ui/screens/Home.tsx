@@ -353,7 +353,7 @@ function CardMenu({ s, title }: { s: TournamentSettings; title: string }) {
         <IShare size={18} />
       </button>
       <a className="set-row nav" href={tHref(s.id, 'settings')} onClick={() => overlay.closeSheet()}>
-        <span>How this sheet is read</span>
+        <span>Reading</span>
         <IChevronRight size={18} />
       </a>
       {!s.id.startsWith('fixture:') && (

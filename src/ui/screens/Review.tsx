@@ -3,7 +3,6 @@ import { useT } from '../ctx';
 import { SubPage } from '../Shell';
 import { navigate, tHref } from '../router';
 import { useOverlay } from '../overlay';
-import { useOpenAi } from '../AiCta';
 import { store } from '../../store/app';
 import { processWorkbook } from '../../store/pipeline';
 import type { SavedReading } from '../../store/settings';
@@ -29,8 +28,9 @@ import {
   type SourceCard,
 } from '../../mapping/review';
 import type { Game } from '../../model/types';
+import { readingCounts } from '../../mapping/issues';
 import { dateLabel, plural } from '../fmt';
-import { IChevronDown, IChevronRight, ISparkle, IWarn } from '../icons';
+import { IChevronDown, IChevronRight, IWarn } from '../icons';
 import type { ScreenProps } from './index';
 import '../styles/review.css';
 
@@ -53,14 +53,15 @@ const divOf = (k: string) => k.slice(0, k.indexOf('::')) || undefined;
 export function Review({ arg }: ScreenProps) {
   const c = useT();
   const wb = c.rt.workbook;
-  if (!wb) return <SubPage title="Check the reading">The sheet isn’t loaded yet.</SubPage>;
-  return <ReviewPage key={`${c.id}:${arg ?? ''}`} wb={wb} compareKey={arg} />;
+  if (!wb) return <SubPage title="Browse what was read">The sheet isn’t loaded yet.</SubPage>;
+  // `odd:<text>` opens on the part a Reading problem is about; anything else names a reading to compare with.
+  const odd = arg?.startsWith('odd:') ? arg.slice(4) : undefined;
+  return <ReviewPage key={`${c.id}:${arg ?? ''}`} wb={wb} compareKey={odd ? undefined : arg} oddText={odd} />;
 }
 
-function ReviewPage({ wb, compareKey }: { wb: Workbook; compareKey?: string }) {
+function ReviewPage({ wb, compareKey, oddText }: { wb: Workbook; compareKey?: string; oddText?: string }) {
   const c = useT();
   const overlay = useOverlay();
-  const openAi = useOpenAi();
   const s = c.settings;
 
   // The readings that can be compared with the current one.
@@ -87,8 +88,9 @@ function ReviewPage({ wb, compareKey }: { wb: Workbook; compareKey?: string }) {
 
   const odd = useMemo(() => oddities(shown.t, shown.mapping, wb), [shown, wb]);
   const problems = problemsOnly(shown.problems);
-  const [tab, setTab] = useState<Tab>(() => (other ? 'changes' : problems.length || odd.length ? 'check' : 'sheet'));
-  const [focus, setFocus] = useState<Focus | undefined>();
+  const opened = oddText ? odd.find((o) => o.text === oddText) : undefined;
+  const [tab, setTab] = useState<Tab>(() => (opened ? opened.area : other ? 'changes' : 'games'));
+  const [focus, setFocus] = useState<Focus | undefined>(() => (opened?.refs.length ? { area: opened.area, refs: new Set(opened.refs), text: opened.text } : undefined));
   const go = (t: Tab, f?: Focus) => {
     setTab(t);
     setFocus(f);
@@ -104,17 +106,18 @@ function ReviewPage({ wb, compareKey }: { wb: Workbook; compareKey?: string }) {
   };
 
   const tabs: { t: Tab; label: string; n?: number; warn?: boolean }[] = [
-    { t: 'check', label: 'Worth checking', n: problems.length + odd.length, warn: problems.length > 0 },
     ...(diff ? [{ t: 'changes' as Tab, label: 'Changes', n: diff.total }] : []),
-    { t: 'sheet', label: 'Where it’s read from' },
-    { t: 'games', label: 'Games', n: shown.t.games.length },
+    { t: 'games', label: 'Games', n: readingCounts(shown.t).games },
     { t: 'teams', label: 'Teams', n: shown.t.teams.length },
     { t: 'pools', label: 'Pools', n: shown.t.pools.length },
     { t: 'days', label: 'Days', n: shown.t.days.length },
+    { t: 'sheet', label: 'Where it’s read from' },
+    { t: 'check', label: 'Worth checking', n: problems.length + odd.length, warn: problems.length > 0 },
   ];
 
   return (
-    <SubPage title="Check the reading" sub={c.t.title} wide>
+    <SubPage title="Browse what was read" sub={c.t.title} back={tHref(c.id, 'settings')} wide>
+      {options.length > 0 && (
       <section className="card rv-compare">
         <label className="rv-compare-row">
           <span>Compare with</span>
@@ -127,7 +130,6 @@ function ReviewPage({ wb, compareKey }: { wb: Workbook; compareKey?: string }) {
             ))}
           </select>
         </label>
-        {!options.length && <span className="small muted">When AI or you change how the sheet is read, the reading before is kept here to compare with.</span>}
         {other && older && (
           <div className="seg rv-which" role="radiogroup" aria-label="Which reading to show">
             {[newer, older].map((x) => (
@@ -153,6 +155,7 @@ function ReviewPage({ wb, compareKey }: { wb: Workbook; compareKey?: string }) {
           </button>
         )}
       </section>
+      )}
 
       <Summary shown={shown} base={base} />
 
@@ -184,32 +187,6 @@ function ReviewPage({ wb, compareKey }: { wb: Workbook; compareKey?: string }) {
       {tab === 'pools' && <PoolsTab r={shown} diff={diff} focus={focus?.area === 'pools' ? focus.refs : undefined} />}
       {tab === 'days' && <DaysTab r={shown} diff={diff} />}
 
-      <span className="lbl-head">Something wrong?</span>
-      <section className="card set-list">
-        <a className="set-row nav" href={tHref(c.id, 'settings')}>
-          <span className="set-label">
-            <b>Quick corrections</b>
-            <small>Dates, game length, team names, divisions</small>
-          </span>
-          <IChevronRight size={18} />
-        </a>
-        <a className="set-row nav" href={tHref(c.id, 'manual')}>
-          <span className="set-label">
-            <b>Show where things are</b>
-            <small>Tap the sheet to set the rows and columns</small>
-          </span>
-          <IChevronRight size={18} />
-        </a>
-        <button className="set-row nav violet-text" onClick={openAi}>
-          <span className="set-label">
-            <b>
-              <ISparkle size={14} /> Let AI fix it
-            </b>
-            <small>You can compare its reading here before using it</small>
-          </span>
-          <IChevronRight size={18} />
-        </button>
-      </section>
     </SubPage>
   );
 }

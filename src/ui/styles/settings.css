@@ -1,11 +1,6 @@
 /* ---------- Settings, rules, app settings, diagnostics (SpecSettings) ---------- */
 .sub-main { gap: 12px; }
 .sub-main .lbl-head { margin: 14px 0 0; }
-.set-summary { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
-.set-summary p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--ink2); }
-.set-summary b { color: var(--ink); }
-.big-num { font-size: 24px; }
-.set-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag.if-soft { background: var(--whatif-soft); color: var(--whatif); }
 .warn-card { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; background: var(--draft); color: var(--draft-ink); font-size: 14px; line-height: 1.45; }
 .set-list { overflow: hidden; }
@@ -75,8 +70,8 @@
 .raw.short { max-height: 120px; overflow: hidden; -webkit-mask-image: linear-gradient(#000 50%, transparent); mask-image: linear-gradient(#000 50%, transparent); cursor: pointer; }
 
 /* ---------- Format editor (SpecFormat) ---------- */
-.fmt-level { display: flex; align-items: center; gap: 12px; padding: 14px 16px; font-size: 15px; }
-.fmt-bar { flex: 1; max-width: 120px; height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; margin-left: auto; }
+.fmt-level { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; font-size: 15px; }
+.fmt-bar { display: block; width: 100%; height: 6px; border-radius: 3px; background: var(--surface2); overflow: hidden; }
 .fmt-bar b { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
 .fmt-template { position: relative; cursor: pointer; }
 .fmt-template select { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
@@ -203,7 +198,3 @@ table.cmp tr.down td:last-child { color: var(--error); font-weight: 700; }
 .key-checks li.bad .kc-mark { background: var(--error); }
 
 /* One-tap AI entry: on the add preview, the settings page and the manual editor. */
-.ai-cta { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border-radius: 16px; background: var(--whatif-soft); color: var(--ink); }
-.ai-cta-head { display: flex; align-items: center; gap: 8px; color: var(--whatif); font-weight: 700; }
-.ai-cta p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--ink2); }
-.ai-cta .btn { align-self: stretch; }

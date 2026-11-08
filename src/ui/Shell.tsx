@@ -14,7 +14,7 @@ import { encodeScenario } from '../engine/scenario';
 import { ReplayBar, ReplayDock } from './screens/Replay';
 import { divKey } from '../model/types';
 import { DivisionPicker } from './DivisionPicker';
-import { useOpenAi } from './AiCta';
+import { useOpenAi } from './FixWithAi';
 
 function useOnline() {
   const [on, setOn] = useState(() => navigator.onLine);

@@ -9,7 +9,7 @@
 .rv-summary .bad, .rv-summary .bad b { color: var(--error); }
 .rv-cmp { padding: 8px 12px; }
 
-.rv-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
+.rv-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 4px; }
 .rv-tabs::-webkit-scrollbar { display: none; }
 .rv-tabs .chip.warn:not(.on) { border-color: var(--cap); color: var(--cap); }
 .rv-n { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--surface2); color: var(--ink2); font-size: 11px; font-weight: 700; }
