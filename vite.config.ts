@@ -1,12 +1,40 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
+import { readFileSync } from 'node:fs';
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
+
+// Sentry release: version plus the commit when built in CI (GitHub Actions sets GITHUB_SHA).
+const release = `tournament-viewer@${pkg.version}+${process.env.GITHUB_SHA?.slice(0, 7) ?? 'local'}`;
+
+// Upload source maps to Sentry only when a token is present (the SENTRY_AUTH_TOKEN secret in CI).
+// The maps are deleted after upload, so they are never published or precached.
+const uploadMaps = Boolean(process.env.SENTRY_AUTH_TOKEN);
 
 export default defineConfig({
+  define: { __APP_RELEASE__: JSON.stringify(release) },
   // Relative base so the site works from any sub-path (GitHub Pages project sites).
   base: './',
   plugins: [
     react(),
+    // Cookieless usage stats (Cloudflare Web Analytics), production builds only so dev visits aren't counted.
+    {
+      name: 'cloudflare-web-analytics',
+      apply: 'build',
+      transformIndexHtml: () => [
+        {
+          tag: 'script',
+          attrs: {
+            defer: true,
+            src: 'https://static.cloudflareinsights.com/beacon.min.js',
+            'data-cf-beacon': '{"token": "00a7c5eb26e64af1886a88787aea165e"}',
+          },
+          injectTo: 'body',
+        },
+      ],
+    },
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
@@ -44,10 +72,20 @@ export default defineConfig({
         ],
       },
     }),
+    uploadMaps &&
+      sentryVitePlugin({
+        org: 'luke-westgate',
+        project: 'tournament-viewer',
+        url: 'https://de.sentry.io/',
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        release: { name: release },
+        sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+        telemetry: false,
+      }),
   ],
   build: {
     target: 'es2022',
-    sourcemap: false,
+    sourcemap: uploadMaps ? 'hidden' : false,
   },
   test: {
     environment: 'node',

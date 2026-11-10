@@ -1,5 +1,7 @@
+import './instrument';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import * as Sentry from '@sentry/react';
 import './ui/styles/tokens.css';
 import './ui/styles/base.css';
 import './ui/styles/shell.css';
@@ -16,7 +18,11 @@ import './ui/styles/settings.css';
 import './ui/styles/home.css';
 import { App } from './ui/App';
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('root')!, {
+  onUncaughtError: Sentry.reactErrorHandler(),
+  onCaughtError: Sentry.reactErrorHandler(),
+  onRecoverableError: Sentry.reactErrorHandler(),
+}).render(
   <StrictMode>
     <App />
   </StrictMode>,
